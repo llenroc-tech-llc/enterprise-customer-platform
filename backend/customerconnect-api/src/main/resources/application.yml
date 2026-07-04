@@ -1,1 +1,22 @@
-spring.application.name=customerconnect-api
+spring:
+  application:
+    name: customerconnect-api
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/customerconnect
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        globally_quoted_identifiers: true
+
+  sql:
+    init:
+      mode: never
