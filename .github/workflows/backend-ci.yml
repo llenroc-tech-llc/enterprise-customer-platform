@@ -15,6 +15,20 @@ jobs:
     name: Build and Test CustomerConnect API
     runs-on: ubuntu-latest
 
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: customerconnect
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
@@ -28,6 +42,9 @@ jobs:
 
       - name: Build and test backend
         working-directory: backend/customerconnect-api
+        env:
+          DB_USERNAME: root
+          DB_PASSWORD: root
         run: |
           chmod +x mvnw
           ./mvnw clean verify
