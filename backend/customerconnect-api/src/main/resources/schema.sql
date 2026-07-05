@@ -1,72 +1,54 @@
 ################################################################################
 ###                                                                          ###
-### Author: Cornell Reddick                                                  ###
+### Author:  Cornell Reddick                                                 ###
 ### Company: Llenroc Tech LLC                                                ###
 ### Project: Enterprise Customer Platform                                    ###
-### Module: CustomerConnect API                                              ###
-### File: schema.sql                                                         ###
+### Module:  CustomerConnect API                                             ###
+### File:    schema.sql                                                      ###
 ### Version: 1.0                                                             ###
 ###                                                                          ###
 ################################################################################
 
 /*
- * --- Database Naming Standards ---
+ * CustomerConnect Database Schema
  *
- * 1. Use snake_case for database object names.
+ * Purpose:
+ *   Defines the initial MySQL database schema for the CustomerConnect API.
  *
- * 2. Use plural table names.
- *    Examples:
- *      users
- *      roles
- *      user_roles
- *
- * 3. Use descriptive primary key names.
- *    Examples:
- *      user_id
- *      role_id
- *      user_role_id
- *
- * 4. Foreign key columns should use the same name as the
- *    primary key column they reference.
- *
- *    Example:
- *      users.user_id
- *      user_roles.user_id
- *
- * 5. Avoid ambiguous column names.
- *
- * 6. Use consistent naming conventions across:
- *      - MySQL schema
- *      - JPA entities
- *      - Spring Data repositories
- *      - REST API models
- *
- * 7. Schema changes should remain aligned with the approved
- *    CustomerConnect physical data model.
- *
- * 8. Database credentials and environment-specific secrets
- *    must never be stored in this file.
- *
- * --- Current Schema Scope ---
- *
- * Current physical model:
- *      - users
- *      - roles
- *      - user_roles
+ * Current Schema Scope:
+ *   - Users
+ *   - Roles
+ *   - UserRoles
  *
  * Database:
- *      MySQL
+ *   MySQL
  *
- * Database design tool:
- *      MySQL Workbench
+ * Database Design Tool:
+ *   MySQL Workbench
  *
- * Schema deployment workflow:
- *      Physical Model
- *          -> Forward Engineering
- *          -> Generated SQL
- *          -> MySQL Schema
- *          -> Spring Boot API Integration
+ * Schema Workflow:
+ *
+ *   Requirements
+ *       -> Logical Data Model
+ *       -> Physical Data Model
+ *       -> Forward Engineering
+ *       -> MySQL Database Schema
+ *       -> Spring Boot API Integration
+ *
+ * Standards:
+ *   - Keep database naming consistent across the application architecture.
+ *   - Keep schema changes aligned with the CustomerConnect physical data model.
+ *   - Keep MySQL tables aligned with JPA entity mappings.
+ *   - Do not store database credentials, secrets, or environment-specific
+ *     configuration values in this file.
  */
+
+
+-- =============================================================================
+-- DATABASE INITIALIZATION
+-- Creates and selects the CustomerConnect database schema.
+-- Configures Unicode support and the database session time zone.
+-- =============================================================================
 
 CREATE SCHEMA IF NOT EXISTS customerconnect;
 
@@ -75,7 +57,24 @@ USE customerconnect;
 SET NAMES utf8mb4;
 SET time_zone = 'US/Eastern';
 
+
+-- =============================================================================
+-- TABLE CLEANUP
+-- Drops existing tables before schema recreation.
+-- Child tables are dropped before parent tables to respect foreign key
+-- dependencies.
+-- =============================================================================
+
+DROP TABLE IF EXISTS UserRoles;
 DROP TABLE IF EXISTS Users;
+DROP TABLE IF EXISTS Roles;
+
+
+-- =============================================================================
+-- USERS TABLE
+-- Stores application user accounts, profile information, authentication
+-- configuration, account status, and default profile image information.
+-- =============================================================================
 
 CREATE TABLE Users
 (
@@ -92,8 +91,49 @@ CREATE TABLE Users
     non_locked   BOOLEAN         DEFAULT TRUE,
     using_mfa    BOOLEAN         DEFAULT FALSE,
     created_date DATETIME        DEFAULT CURRENT_TIMESTAMP,
-    image_url    VARCHAR(255)    image_url VARCHAR(255) DEFAULT '/assets/images/avatars/default-user-avatar.png',
+    image_url    VARCHAR(255)    DEFAULT '/assets/images/avatars/default-user-avatar.png',
 
     CONSTRAINT PK_Users PRIMARY KEY (id),
     CONSTRAINT UQ_Users_Email UNIQUE (email)
+);
+
+
+-- =============================================================================
+-- ROLES TABLE
+-- Stores application roles and their associated permission definitions.
+-- =============================================================================
+
+CREATE TABLE Roles
+(
+    id         BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    name       VARCHAR(50)     NOT NULL,
+    permission VARCHAR(255)    NOT NULL,
+
+    CONSTRAINT UQ_Roles_Name UNIQUE (name)
+);
+
+
+-- =============================================================================
+-- USER ROLES TABLE
+-- Associates application users with their assigned application roles.
+-- Foreign key rules maintain referential integrity between Users and Roles.
+-- =============================================================================
+
+CREATE TABLE UserRoles
+(
+    id      BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT UNSIGNED NOT NULL,
+    role_id BIGINT UNSIGNED NOT NULL,
+
+    FOREIGN KEY (user_id)
+        REFERENCES Users (id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+
+    FOREIGN KEY (role_id)
+        REFERENCES Roles (id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT UQ_UserRoles_User_Id UNIQUE (user_id)
 );
