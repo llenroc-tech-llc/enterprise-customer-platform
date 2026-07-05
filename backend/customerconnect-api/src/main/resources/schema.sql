@@ -70,7 +70,7 @@ DROP TABLE IF EXISTS UserRoles;
 DROP TABLE IF EXISTS Events;
 DROP TABLE IF EXISTS Users;
 DROP TABLE IF EXISTS Roles;
-
+DROP TABLE IF EXISTS AccountVerifications;
 
 -- =============================================================================
 -- USERS TABLE
@@ -191,4 +191,26 @@ CREATE TABLE UserEvents
         REFERENCES Events (id)
         ON DELETE RESTRICT
         ON UPDATE CASCADE
+);
+
+-- =============================================================================
+-- ACCOUNT VERIFICATIONS TABLE
+-- Stores account verification URLs associated with application users.
+-- Each user and verification URL must be unique.
+-- =============================================================================
+
+CREATE TABLE AccountVerifications
+(
+    id      BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT UNSIGNED NOT NULL,
+    url     VARCHAR(255)    NOT NULL,
+    `date`  DATETIME        NOT NULL,
+
+    FOREIGN KEY (user_id)
+        REFERENCES Users (id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+
+    CONSTRAINT UQ_AccountVerifications_User_Id UNIQUE (user_id),
+    CONSTRAINT UQ_AccountVerifications_Url UNIQUE (url)
 );
