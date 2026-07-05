@@ -1,0 +1,31 @@
+name: CustomerConnect Backend CI
+
+on:
+  push:
+    branches:
+      - develop
+
+  pull_request:
+    branches:
+      - develop
+      - main
+
+jobs:
+  backend-build:
+    name: Build and Test CustomerConnect API
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Build and test backend
+        working-directory: backend/customerconnect-api
+        run: ./mvnw clean verify
