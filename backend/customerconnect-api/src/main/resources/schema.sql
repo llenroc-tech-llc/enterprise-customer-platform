@@ -55,8 +55,7 @@ CREATE SCHEMA IF NOT EXISTS customerconnect;
 USE customerconnect;
 
 SET NAMES utf8mb4;
-SET time_zone = 'US/Eastern';
-
+SET TIME_ZONE = '-4:00';
 
 -- =============================================================================
 -- TABLE CLEANUP
