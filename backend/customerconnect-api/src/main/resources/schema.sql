@@ -65,7 +65,9 @@ SET time_zone = 'US/Eastern';
 -- dependencies.
 -- =============================================================================
 
+DROP TABLE IF EXISTS UserEvents;
 DROP TABLE IF EXISTS UserRoles;
+DROP TABLE IF EXISTS Events;
 DROP TABLE IF EXISTS Users;
 DROP TABLE IF EXISTS Roles;
 
@@ -136,4 +138,57 @@ CREATE TABLE UserRoles
         ON UPDATE CASCADE,
 
     CONSTRAINT UQ_UserRoles_User_Id UNIQUE (user_id)
+);
+
+-- =============================================================================
+-- EVENTS TABLE
+-- Defines the supported user activity and security event types that can be
+-- recorded by the CustomerConnect application.
+-- =============================================================================
+
+CREATE TABLE Events
+(
+    id          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    type        VARCHAR(50)     NOT NULL
+        CHECK (type IN (
+                        'LOGIN_ATTEMPT',
+                        'LOGIN_ATTEMPT_FAILURE',
+                        'LOGIN_ATTEMPT_SUCCESS',
+                        'PROFILE_UPDATE',
+                        'PROFILE_PICTURE_UPDATE',
+                        'ROLE_UPDATE',
+                        'ACCOUNT_SETTINGS_UPDATE',
+                        'PASSWORD_UPDATE',
+                        'MFA_UPDATE'
+            )),
+    description VARCHAR(255)    NOT NULL,
+
+    CONSTRAINT UQ_Events_Type UNIQUE (type)
+);
+
+
+-- =============================================================================
+-- USER EVENTS TABLE
+-- Records application activity and security events associated with users,
+-- including device information, IP address, and event timestamp.
+-- =============================================================================
+
+CREATE TABLE UserEvents
+(
+    id         BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    user_id    BIGINT UNSIGNED NOT NULL,
+    event_id   BIGINT UNSIGNED NOT NULL,
+    device     VARCHAR(100)    DEFAULT NULL,
+    ip_address VARCHAR(100)    DEFAULT NULL,
+    created_at DATETIME        DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (user_id)
+        REFERENCES Users (id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+
+    FOREIGN KEY (event_id)
+        REFERENCES Events (id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE
 );
