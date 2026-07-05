@@ -72,6 +72,7 @@ DROP TABLE IF EXISTS Users;
 DROP TABLE IF EXISTS Roles;
 DROP TABLE IF EXISTS AccountVerifications;
 DROP TABLE IF EXISTS ResetPasswordVerifications;
+DROP TABLE IF EXISTS TwoFactorVerifications;
 
 -- =============================================================================
 -- USERS TABLE
@@ -236,4 +237,27 @@ CREATE TABLE ResetPasswordVerifications
 
     CONSTRAINT UQ_ResetPasswordVerifications_User_Id UNIQUE (user_id),
     CONSTRAINT UQ_ResetPasswordVerifications_Url UNIQUE (url)
+);
+
+-- =============================================================================
+-- TWO-FACTOR VERIFICATIONS TABLE
+-- Stores temporary verification codes and expiration dates used during the
+-- CustomerConnect two-factor authentication process.
+-- Each user and verification code must be unique.
+-- =============================================================================
+
+CREATE TABLE TwoFactorVerifications
+(
+    id              BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    user_id         BIGINT UNSIGNED NOT NULL,
+    code            VARCHAR(10)     NOT NULL,
+    expiration_date DATETIME        NOT NULL,
+
+    FOREIGN KEY (user_id)
+        REFERENCES Users (id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+
+    CONSTRAINT UQ_TwoFactorVerifications_User_Id UNIQUE (user_id),
+    CONSTRAINT UQ_TwoFactorVerifications_Code UNIQUE (code)
 );
