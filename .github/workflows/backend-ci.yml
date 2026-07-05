@@ -28,4 +28,6 @@ jobs:
 
       - name: Build and test backend
         working-directory: backend/customerconnect-api
-        run: ./mvnw clean verify
+        run: |
+          chmod +x mvnw
+          ./mvnw clean verify
