@@ -64,14 +64,15 @@ SET TIME_ZONE = '-4:00';
 -- dependencies.
 -- =============================================================================
 
-DROP TABLE IF EXISTS UserEvents;
-DROP TABLE IF EXISTS UserRoles;
-DROP TABLE IF EXISTS Events;
-DROP TABLE IF EXISTS Users;
-DROP TABLE IF EXISTS Roles;
 DROP TABLE IF EXISTS AccountVerifications;
 DROP TABLE IF EXISTS ResetPasswordVerifications;
 DROP TABLE IF EXISTS TwoFactorVerifications;
+DROP TABLE IF EXISTS UserEvents;
+DROP TABLE IF EXISTS UserRoles;
+
+DROP TABLE IF EXISTS Events;
+DROP TABLE IF EXISTS Roles;
+DROP TABLE IF EXISTS Users;
 
 -- =============================================================================
 -- USERS TABLE
