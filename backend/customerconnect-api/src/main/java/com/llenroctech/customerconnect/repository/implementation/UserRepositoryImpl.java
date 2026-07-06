@@ -61,10 +61,7 @@ public class UserRepositoryImpl implements UserRepository<User> {
             user.setNotLocked(true);
 
             return user;
-        } catch (EmptyResultDataAccessException exception){
-            throw new UserAlreadyExistsException("No role found by name:  " + ROLE_USER.name());
-        }
-        catch (Exception exception) {
+        } catch (Exception exception) {
             throw new UserAlreadyExistsException(
                     "An error occurred. Please try again later."
             );
