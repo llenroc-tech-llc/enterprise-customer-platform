@@ -2,7 +2,6 @@ package com.llenroctech.customerconnect.repository.implementation;
 
 import com.llenroctech.customerconnect.domain.Role;
 import com.llenroctech.customerconnect.exception.RoleNotFoundException;
-import com.llenroctech.customerconnect.exception.UserAlreadyExistsException;
 import com.llenroctech.customerconnect.repository.RoleRepository;
 import com.llenroctech.customerconnect.rowmapper.RoleRowMapper;
 import lombok.RequiredArgsConstructor;
@@ -16,8 +15,8 @@ import java.util.List;
 import java.util.Map;
 
 import static com.llenroctech.customerconnect.enumeration.RoleType.ROLE_USER;
-import static com.llenroctech.customerconnect.query.UserQuery.INSERT_ROLE_TO_USER_QUERY;
-import static com.llenroctech.customerconnect.query.UserQuery.SELECT_ROLE_BY_NAME_QUERY;
+import static com.llenroctech.customerconnect.query.RoleQuery.INSERT_ROLE_TO_USER_QUERY;
+import static com.llenroctech.customerconnect.query.RoleQuery.SELECT_ROLE_BY_NAME_QUERY;
 
 @Repository
 @RequiredArgsConstructor
