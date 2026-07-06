@@ -10,6 +10,6 @@ public class UserQuery {
                     "VALUES (:firstName, :lastName, :email, :password)";
 
     public static final String INSERT_ACCOUNT_VERIFICATION_URL_QUERY =
-            "INSERT INTO AccountVerifications (user_id, url) " +
-                    "VALUES (:userId, :url)";
+            "INSERT INTO AccountVerifications (user_id, url, `date`) " +
+                    "VALUES (:userId, :url, NOW())";
 }

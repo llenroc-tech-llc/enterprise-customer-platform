@@ -44,5 +44,5 @@ spring:
   # ---------------------------------------------------------------------------
   sql:
     init:
-      mode: always
+      mode: never
       continue-on-error: false

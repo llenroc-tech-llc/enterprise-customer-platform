@@ -61,9 +61,8 @@ public class UserRepositoryImpl implements UserRepository<User> {
 
             return user;
         } catch (Exception exception) {
-            throw new UserAlreadyExistsException(
-                    "An error occurred. Please try again later."
-            );
+            log.error("Error creating user", exception);
+            throw new RuntimeException(exception);
         }
     }
 
@@ -95,7 +94,7 @@ public class UserRepositoryImpl implements UserRepository<User> {
         return new MapSqlParameterSource()
                 .addValue("firstName", user.getFirstName())
                 .addValue("lastName", user.getLastName())
-                .addValue("email", user.getEmail())
+                .addValue("email", user.getEmail().trim().toLowerCase())
                 .addValue("password", encoder.encode(user.getPassword()));
     }
 

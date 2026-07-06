@@ -54,7 +54,7 @@ public class RoleRepositoryImpl implements RoleRepository<Role> {
         try {
             Role role = jdbc.queryForObject(
                     SELECT_ROLE_BY_NAME_QUERY,
-                    Map.of("roleName", roleName),
+                    Map.of("name", roleName),
                     new RoleRowMapper()
             );
 
