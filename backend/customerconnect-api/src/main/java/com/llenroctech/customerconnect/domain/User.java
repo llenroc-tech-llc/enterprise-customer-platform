@@ -1,9 +1,11 @@
 package com.llenroctech.customerconnect.domain;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
@@ -32,6 +34,7 @@ public class User {
     private String email;
 
     @NotBlank(message = "Password is required")
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
 
     private String address;
@@ -41,7 +44,8 @@ public class User {
     private String imageUrl;
 
     private boolean enabled;
-    private boolean isNotLocked;
+    @Builder.Default
+    private boolean isNotLocked = true;
     private boolean isUsingMfa;
 
     private LocalDateTime createdAt;
