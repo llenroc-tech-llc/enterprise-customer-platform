@@ -1,3 +1,23 @@
+# =============================================================================
+# CUSTOMERCONNECT API - SHARED CONFIGURATION
+# =============================================================================
+
 spring:
   profiles:
     active: '@spring.profiles.active@'
+
+  application:
+    name: customerconnect-api
+
+
+# =============================================================================
+# APPLICATION METADATA
+# =============================================================================
+
+application:
+  title: CustomerConnect API
+  version: 1.0.0
+  description: Enterprise customer management and identity platform
+  organization: Llenroc Tech LLC
+  platform: Enterprise Customer Platform
+  environment: ${spring.profiles.active}
