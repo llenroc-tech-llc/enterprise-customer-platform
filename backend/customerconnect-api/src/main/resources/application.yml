@@ -1,48 +1,23 @@
 # =============================================================================
-# CUSTOMERCONNECT API CONFIGURATION
+# CUSTOMERCONNECT API - SHARED CONFIGURATION
 # =============================================================================
 
 spring:
+  profiles:
+    active: '@spring.profiles.active@'
 
-  # ---------------------------------------------------------------------------
-  # APPLICATION
-  # ---------------------------------------------------------------------------
   application:
     name: customerconnect-api
 
 
-  # ---------------------------------------------------------------------------
-  # DATABASE CONNECTION
-  # ---------------------------------------------------------------------------
-  datasource:
-    url: jdbc:mysql://localhost:3306/customerconnect
-    username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD}
-    driver-class-name: com.mysql.cj.jdbc.Driver
+# =============================================================================
+# APPLICATION METADATA
+# =============================================================================
 
-
-  # ---------------------------------------------------------------------------
-  # JPA / HIBERNATE
-  # ---------------------------------------------------------------------------
-  jpa:
-    hibernate:
-      ddl-auto: update
-
-    show-sql: true
-
-    properties:
-      hibernate:
-        format_sql: true
-        globally_quoted_identifiers: true
-
-
-  # ---------------------------------------------------------------------------
-  # SQL INITIALIZATION
-  #
-  # Schema creation is currently managed through the approved database model
-  # and schema.sql workflow. Automatic Spring SQL initialization is disabled.
-  # ---------------------------------------------------------------------------
-  sql:
-    init:
-      mode: always
-      continue-on-error: false
+application:
+  title: CustomerConnect API
+  version: 1.0.0
+  description: Enterprise customer management and identity platform
+  organization: Llenroc Tech LLC
+  platform: Enterprise Customer Platform
+  environment: ${spring.profiles.active}
