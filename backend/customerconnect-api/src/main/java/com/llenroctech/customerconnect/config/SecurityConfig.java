@@ -1,6 +1,7 @@
 package com.llenroctech.customerconnect.config;
 
 import com.llenroctech.customerconnect.security.handler.ApiAccessDeniedHandler;
+import com.llenroctech.customerconnect.security.handler.ApiAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,6 +22,8 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
     private final BCryptPasswordEncoder encoder;
     private final ApiAccessDeniedHandler accessDeniedHandler;
+    private final ApiAuthenticationEntryPoint authenticationEntryPoint;
+
     private static final String[] PUBLIC_URLS = {
             "/user/register",
             "/user/login"
@@ -39,6 +42,7 @@ public class SecurityConfig {
 
                 .exceptionHandling(exception -> exception
                         .accessDeniedHandler(accessDeniedHandler)
+                        .authenticationEntryPoint(authenticationEntryPoint)
                 )
 
                 .authorizeHttpRequests(auth -> auth
