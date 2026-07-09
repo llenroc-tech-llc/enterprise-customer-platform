@@ -15,6 +15,8 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Repository;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import com.llenroctech.customerconnect.rowmapper.UserRowMapper;
+import org.springframework.dao.EmptyResultDataAccessException;
 
 import java.util.Collection;
 import java.util.List;
@@ -84,6 +86,22 @@ public class UserRepositoryImpl implements UserRepository<User> {
     @Override
     public Boolean delete(Long id) {
         return false;
+    }
+
+    @Override
+    public User getUserByEmail(String email) {
+        try {
+            return jdbc.queryForObject(
+                    SELECT_USER_BY_EMAIL_QUERY,
+                    Map.of("email", email.trim().toLowerCase()),
+                    new UserRowMapper()
+            );
+        } catch (EmptyResultDataAccessException exception) {
+            return null;
+        } catch (Exception exception) {
+            log.error("Error retrieving user by email: {}", email, exception);
+            throw exception;
+        }
     }
 
     private Integer getEmailCount(String email) {

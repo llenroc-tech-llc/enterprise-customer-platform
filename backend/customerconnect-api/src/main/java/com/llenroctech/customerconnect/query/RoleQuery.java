@@ -7,4 +7,9 @@ public class RoleQuery {
 
     public static final String SELECT_ROLE_BY_NAME_QUERY =
             "SELECT * FROM Roles WHERE name = :name";
+
+    public static final String SELECT_ROLE_BY_USER_ID_QUERY =
+            "SELECT r.* FROM Roles r " +
+                    "JOIN UserRoles ur ON ur.role_id = r.id " +
+                    "WHERE ur.user_id = :userId";
 }

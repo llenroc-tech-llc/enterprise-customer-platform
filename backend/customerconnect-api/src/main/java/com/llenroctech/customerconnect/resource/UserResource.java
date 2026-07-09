@@ -3,6 +3,7 @@ package com.llenroctech.customerconnect.resource;
 import com.llenroctech.customerconnect.domain.HttpResponse;
 import com.llenroctech.customerconnect.domain.User;
 import com.llenroctech.customerconnect.dto.UserDTO;
+import com.llenroctech.customerconnect.request.LoginRequest;
 import com.llenroctech.customerconnect.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ import java.net.URI;
 import static java.time.LocalDateTime.now;
 import static java.util.Map.of;
 import static org.springframework.http.HttpStatus.CREATED;
+import static org.springframework.http.HttpStatus.OK;
 
 @RestController
 @RequestMapping("/user")
@@ -30,9 +32,28 @@ public class UserResource {
     private final AuthenticationManager authenticationManager;
 
     @PostMapping("/login")
-    public ResponseEntity<HttpResponse> login(String email, String password) {
-        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, password));
-        return null;
+    public ResponseEntity<HttpResponse> login(
+            @RequestBody @Valid LoginRequest loginRequest) {
+
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        loginRequest.getEmail(),
+                        loginRequest.getPassword()
+                )
+        );
+
+        UserDTO userDTO =
+                userService.getUserByEmail(loginRequest.getEmail());
+
+        return ResponseEntity.ok(
+                HttpResponse.builder()
+                        .timestamp(now().toString())
+                        .data(of("user", userDTO))
+                        .message("Login successful")
+                        .status(OK)
+                        .statusCode(OK.value())
+                        .build()
+        );
     }
 
     @PostMapping("/register")
