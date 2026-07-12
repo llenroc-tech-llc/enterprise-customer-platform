@@ -45,6 +45,33 @@ public class UserResource {
         UserDTO userDTO =
                 userService.getUserByEmail(loginRequest.getEmail());
 
+        return userDTO.isUsingMfa()
+                ? sendVerificationCode(userDTO)
+                : sendLoginResponse(userDTO);
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<HttpResponse> saveUser(
+            @RequestBody @Valid User user) {
+
+        UserDTO userDTO = userService.createUser(user);
+
+        return ResponseEntity
+                .created(getUserUri(userDTO.getId()))
+                .body(
+                        HttpResponse.builder()
+                                .timestamp(now().toString())
+                                .data(of("user", userDTO))
+                                .message("User created")
+                                .status(CREATED)
+                                .statusCode(CREATED.value())
+                                .build()
+                );
+    }
+
+    private ResponseEntity<HttpResponse> sendLoginResponse(
+            UserDTO userDTO) {
+
         return ResponseEntity.ok(
                 HttpResponse.builder()
                         .timestamp(now().toString())
@@ -56,26 +83,27 @@ public class UserResource {
         );
     }
 
-    @PostMapping("/register")
-    public ResponseEntity<HttpResponse> saveUser(@RequestBody @Valid User user) {
-        UserDTO userDTO = userService.createUser(user);
+    private ResponseEntity<HttpResponse> sendVerificationCode(
+            UserDTO userDTO) {
 
-        return ResponseEntity.created(getUri()).body(
+        userService.sendVerificationCode(userDTO);
+
+        return ResponseEntity.ok(
                 HttpResponse.builder()
                         .timestamp(now().toString())
                         .data(of("user", userDTO))
-                        .message("User created")
-                        .status(CREATED)
-                        .statusCode(CREATED.value())
+                        .message("Verification code sent")
+                        .status(OK)
+                        .statusCode(OK.value())
                         .build()
         );
     }
 
-    private URI getUri() {
-        return URI.create(
-                ServletUriComponentsBuilder.fromCurrentContextPath()
-                        .path("/user/get/<userId>")
-                        .toUriString()
-        );
+    private URI getUserUri(Long userId) {
+        return ServletUriComponentsBuilder
+                .fromCurrentContextPath()
+                .path("/user/get/{userId}")
+                .buildAndExpand(userId)
+                .toUri();
     }
 }
