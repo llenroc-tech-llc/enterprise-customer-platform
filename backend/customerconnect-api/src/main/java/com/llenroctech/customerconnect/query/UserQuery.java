@@ -12,4 +12,7 @@ public class UserQuery {
     public static final String INSERT_ACCOUNT_VERIFICATION_URL_QUERY =
             "INSERT INTO AccountVerifications (user_id, url, `date`) " +
                     "VALUES (:userId, :url, NOW())";
+
+    public static final String SELECT_USER_BY_EMAIL_QUERY =
+            "SELECT * FROM Users WHERE email = :email";
 }

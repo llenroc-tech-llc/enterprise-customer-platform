@@ -15,8 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.llenroctech.customerconnect.enumeration.RoleType.ROLE_USER;
-import static com.llenroctech.customerconnect.query.RoleQuery.INSERT_ROLE_TO_USER_QUERY;
-import static com.llenroctech.customerconnect.query.RoleQuery.SELECT_ROLE_BY_NAME_QUERY;
+import static com.llenroctech.customerconnect.query.RoleQuery.*;
 
 @Repository
 @RequiredArgsConstructor
@@ -83,7 +82,25 @@ public class RoleRepositoryImpl implements RoleRepository<Role> {
 
     @Override
     public Role getRoleByUserId(Long userId) {
-        return null;
+        try {
+            return jdbc.queryForObject(
+                    SELECT_ROLE_BY_USER_ID_QUERY,
+                    Map.of("userId", userId),
+                    new RoleRowMapper()
+            );
+        } catch (EmptyResultDataAccessException exception) {
+            throw new RoleNotFoundException(
+                    "No role found for user ID: " + userId
+            );
+        } catch (Exception exception) {
+            log.error(
+                    "Failed to retrieve role for user ID: {}",
+                    userId,
+                    exception
+            );
+
+            throw exception;
+        }
     }
 
     @Override
