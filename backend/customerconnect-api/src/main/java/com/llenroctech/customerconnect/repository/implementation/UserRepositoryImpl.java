@@ -7,7 +7,6 @@ import com.llenroctech.customerconnect.exception.UserAlreadyExistsException;
 import com.llenroctech.customerconnect.repository.RoleRepository;
 import com.llenroctech.customerconnect.repository.UserRepository;
 import com.llenroctech.customerconnect.rowmapper.UserRowMapper;
-import com.llenroctech.customerconnect.service.smsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -43,7 +42,6 @@ public class UserRepositoryImpl implements UserRepository<User> {
     private final NamedParameterJdbcTemplate jdbc;
     private final RoleRepository<Role> roleRepository;
     private final BCryptPasswordEncoder encoder;
-    private final smsService smsService;
 
     @Override
     public User create(User user) {
@@ -114,9 +112,9 @@ public class UserRepositoryImpl implements UserRepository<User> {
 
     @Override
     @Transactional
-    public void sendVerificationCode(UserDTO user) {
+    public String createVerificationCode(UserDTO user) {
         LocalDateTime expirationDate =
-                LocalDateTime.now().plusDays(1);
+                LocalDateTime.now().plusMinutes(10);
 
         String verificationCode =
                 String.format(
@@ -141,20 +139,18 @@ public class UserRepositoryImpl implements UserRepository<User> {
                     parameters
             );
 
-            smsService.sendVerificationCode(
-                    user.getPhone(),
-                    verificationCode
-            );
+            return verificationCode;
 
         } catch (Exception exception) {
             log.error(
-                    "Failed to create or send MFA verification code for user ID {}",
+                    "Failed to create verification code for user ID {}",
                     user.getId(),
                     exception
             );
 
             throw new RuntimeException(
-                    "An error occurred while processing the verification code."
+                    "An error occurred while creating the verification code.",
+                    exception
             );
         }
     }
