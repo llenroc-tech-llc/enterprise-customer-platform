@@ -30,6 +30,7 @@ public class SecurityConfig {
     private static final String[] PUBLIC_URLS = {
             "/user/register",
             "/user/login",
+            "/user/verify-code",
             "/user/refresh-token"
     };
 

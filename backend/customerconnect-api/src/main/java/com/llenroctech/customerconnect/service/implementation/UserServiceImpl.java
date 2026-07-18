@@ -57,6 +57,11 @@ public class UserServiceImpl implements UserService {
         );
     }
 
+    @Override
+    public boolean verifyCode(String email, String code) {
+        return userRepository.verifyCode(email, code);
+    }
+
     private String getLastFourDigits(String phoneNumber) {
         if (phoneNumber == null) {
             return "****";
