@@ -26,3 +26,10 @@ twilio:
   account-sid: ${TWILIO_ACCOUNT_SID}
   auth-token: ${TWILIO_AUTH_TOKEN}
   phone-number: ${TWILIO_PHONE_NUMBER}
+
+jwt:
+  secret: ${JWT_SECRET}
+  issuer: ${JWT_ISSUER:llenroc-tech-customerconnect}
+  audience: ${JWT_AUDIENCE:customerconnect-api}
+  access-token-expiration-ms: ${JWT_ACCESS_TOKEN_EXPIRATION_MS:1800000}
+  refresh-token-expiration-ms: ${JWT_REFRESH_TOKEN_EXPIRATION_MS:432000000}

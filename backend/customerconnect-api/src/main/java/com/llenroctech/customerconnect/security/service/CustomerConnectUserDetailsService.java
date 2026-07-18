@@ -21,7 +21,9 @@ public class CustomerConnectUserDetailsService implements UserDetailsService {
     private final RoleRepository<Role> roleRepository;
 
     @Override
-    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+    public UserDetails loadUserByUsername(String email)
+            throws UsernameNotFoundException {
+
         User user = userRepository.getUserByEmail(email);
 
         if (user == null) {
@@ -31,8 +33,16 @@ public class CustomerConnectUserDetailsService implements UserDetailsService {
 
         Role role = roleRepository.getRoleByUserId(user.getId());
 
+        if (role == null) {
+            log.error("Role not found for user ID: {}", user.getId());
+            throw new UsernameNotFoundException("User role not found");
+        }
+
         log.info("User found in database by email: {}", email);
 
-        return new CustomerConnectUserPrincipal(user, role.getPermissions());
+        return new CustomerConnectUserPrincipal(
+                user,
+                role.getPermissions()
+        );
     }
 }

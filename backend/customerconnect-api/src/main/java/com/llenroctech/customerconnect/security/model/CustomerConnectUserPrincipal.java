@@ -8,6 +8,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 @RequiredArgsConstructor
 public class CustomerConnectUserPrincipal implements UserDetails {
@@ -17,11 +18,20 @@ public class CustomerConnectUserPrincipal implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
+        if (permissions == null || permissions.isBlank()) {
+            return List.of();
+        }
+
         return Arrays.stream(permissions.split(","))
                 .map(String::trim)
                 .filter(permission -> !permission.isBlank())
+                .distinct()
                 .map(SimpleGrantedAuthority::new)
                 .toList();
+    }
+
+    public Long getUserId() {
+        return user.getId();
     }
 
     @Override
