@@ -1,48 +1,35 @@
 # =============================================================================
-# CUSTOMERCONNECT API CONFIGURATION
+# CUSTOMERCONNECT API - SHARED CONFIGURATION
 # =============================================================================
 
 spring:
+  profiles:
+    active: '@spring.profiles.active@'
 
-  # ---------------------------------------------------------------------------
-  # APPLICATION
-  # ---------------------------------------------------------------------------
   application:
     name: customerconnect-api
 
 
-  # ---------------------------------------------------------------------------
-  # DATABASE CONNECTION
-  # ---------------------------------------------------------------------------
-  datasource:
-    url: jdbc:mysql://localhost:3306/customerconnect
-    username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD}
-    driver-class-name: com.mysql.cj.jdbc.Driver
+# =============================================================================
+# APPLICATION METADATA
+# =============================================================================
 
+application:
+  title: CustomerConnect API
+  version: 1.0.0
+  description: Enterprise customer management and identity platform
+  organization: Llenroc Tech LLC
+  platform: Enterprise Customer Platform
+  environment: ${spring.profiles.active}
 
-  # ---------------------------------------------------------------------------
-  # JPA / HIBERNATE
-  # ---------------------------------------------------------------------------
-  jpa:
-    hibernate:
-      ddl-auto: update
+twilio:
+  account-sid: ${TWILIO_ACCOUNT_SID}
+  auth-token: ${TWILIO_AUTH_TOKEN}
+  phone-number: ${TWILIO_PHONE_NUMBER}
 
-    show-sql: true
-
-    properties:
-      hibernate:
-        format_sql: true
-        globally_quoted_identifiers: true
-
-
-  # ---------------------------------------------------------------------------
-  # SQL INITIALIZATION
-  #
-  # Schema creation is currently managed through the approved database model
-  # and schema.sql workflow. Automatic Spring SQL initialization is disabled.
-  # ---------------------------------------------------------------------------
-  sql:
-    init:
-      mode: always
-      continue-on-error: false
+jwt:
+  secret: ${JWT_SECRET}
+  issuer: ${JWT_ISSUER:llenroc-tech-customerconnect}
+  audience: ${JWT_AUDIENCE:customerconnect-api}
+  access-token-expiration-ms: ${JWT_ACCESS_TOKEN_EXPIRATION_MS:1800000}
+  refresh-token-expiration-ms: ${JWT_REFRESH_TOKEN_EXPIRATION_MS:432000000}
