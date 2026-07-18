@@ -42,7 +42,8 @@ public class UserServiceImpl implements UserService {
         String verificationCode =
                 userRepository.createVerificationCode(userDTO);
 
-        if (environment.acceptsProfiles(Profiles.of("dev"))) {
+        if (environment.acceptsProfiles(Profiles.of("dev"))
+                && !environment.acceptsProfiles(Profiles.of("prod"))) {
             log.info(
                     "Development MFA code for phone ending in {}: {}",
                     getLastFourDigits(userDTO.getPhone()),

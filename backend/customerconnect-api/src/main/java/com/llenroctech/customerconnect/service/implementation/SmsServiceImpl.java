@@ -8,28 +8,28 @@ import com.twilio.type.PhoneNumber;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.stereotype.Service;
-
-
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class SmsServiceImpl implements SmsService {
 
-    @Value("${twilio.account-sid}")
-    private String accountSid;
-
-    @Value("${twilio.auth-token}")
-    private String authToken;
-
-    @Value("${twilio.phone-number}")
-    private String fromPhoneNumber;
+    private final Environment environment;
 
     @PostConstruct
     void initializeTwilio() {
-        Twilio.init(accountSid, authToken);
+        if (isLocalDevelopment()) {
+            log.info("Development SMS delivery enabled; Twilio initialization skipped");
+            return;
+        }
+
+        Twilio.init(
+                environment.getRequiredProperty("twilio.account-sid"),
+                environment.getRequiredProperty("twilio.auth-token")
+        );
         log.info("Twilio SMS client initialized");
     }
 
@@ -38,10 +38,20 @@ public class SmsServiceImpl implements SmsService {
             String phoneNumber,
             String verificationCode
     ) {
+        if (isLocalDevelopment()) {
+            log.info(
+                    "Development SMS delivery skipped for phone ending in {}",
+                    maskPhoneNumber(phoneNumber)
+            );
+            return;
+        }
+
         try {
             Message message = Message.creator(
                     new PhoneNumber(formatPhoneNumber(phoneNumber)),
-                    new PhoneNumber(fromPhoneNumber),
+                    new PhoneNumber(environment.getRequiredProperty(
+                            "twilio.phone-number"
+                    )),
                     buildVerificationMessage(verificationCode)
             ).create();
 
@@ -50,19 +60,22 @@ public class SmsServiceImpl implements SmsService {
                     message.getSid(),
                     maskPhoneNumber(phoneNumber)
             );
-
         } catch (ApiException exception) {
             log.error(
                     "Twilio failed to send verification SMS to recipient ending in {}",
                     maskPhoneNumber(phoneNumber),
                     exception
             );
-
             throw new IllegalStateException(
                     "Unable to send the verification code.",
                     exception
             );
         }
+    }
+
+    private boolean isLocalDevelopment() {
+        return environment.acceptsProfiles(Profiles.of("dev"))
+                && !environment.acceptsProfiles(Profiles.of("prod"));
     }
 
     private String buildVerificationMessage(String verificationCode) {
@@ -81,15 +94,12 @@ public class SmsServiceImpl implements SmsService {
         }
 
         String digitsOnly = phoneNumber.replaceAll("\\D", "");
-
         if (phoneNumber.startsWith("+")) {
             return "+" + digitsOnly;
         }
-
         if (digitsOnly.length() == 10) {
             return "+1" + digitsOnly;
         }
-
         if (digitsOnly.length() == 11 && digitsOnly.startsWith("1")) {
             return "+" + digitsOnly;
         }
@@ -105,7 +115,6 @@ public class SmsServiceImpl implements SmsService {
         }
 
         String digitsOnly = phoneNumber.replaceAll("\\D", "");
-
         if (digitsOnly.length() < 4) {
             return "****";
         }
