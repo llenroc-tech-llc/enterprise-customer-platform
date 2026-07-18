@@ -1,6 +1,7 @@
 package com.llenroctech.customerconnect.repository;
 
 import com.llenroctech.customerconnect.domain.User;
+import com.llenroctech.customerconnect.dto.UserDTO;
 
 import java.util.Collection;
 
@@ -17,4 +18,6 @@ public interface UserRepository<T extends User> {
     Boolean delete(Long id);
 
     T getUserByEmail(String email);
+
+    String createVerificationCode(UserDTO userDTO);
 }

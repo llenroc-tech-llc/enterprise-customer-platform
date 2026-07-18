@@ -2,11 +2,14 @@ package com.llenroctech.customerconnect.repository.implementation;
 
 import com.llenroctech.customerconnect.domain.Role;
 import com.llenroctech.customerconnect.domain.User;
+import com.llenroctech.customerconnect.dto.UserDTO;
 import com.llenroctech.customerconnect.exception.UserAlreadyExistsException;
 import com.llenroctech.customerconnect.repository.RoleRepository;
 import com.llenroctech.customerconnect.repository.UserRepository;
+import com.llenroctech.customerconnect.rowmapper.UserRowMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
@@ -14,10 +17,11 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-import com.llenroctech.customerconnect.rowmapper.UserRowMapper;
-import org.springframework.dao.EmptyResultDataAccessException;
 
+import java.security.SecureRandom;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +36,8 @@ import static java.util.Objects.requireNonNull;
 @RequiredArgsConstructor
 @Slf4j
 public class UserRepositoryImpl implements UserRepository<User> {
+
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private final NamedParameterJdbcTemplate jdbc;
     private final RoleRepository<Role> roleRepository;
@@ -101,6 +107,51 @@ public class UserRepositoryImpl implements UserRepository<User> {
         } catch (Exception exception) {
             log.error("Error retrieving user by email: {}", email, exception);
             throw exception;
+        }
+    }
+
+    @Override
+    @Transactional
+    public String createVerificationCode(UserDTO user) {
+        LocalDateTime expirationDate =
+                LocalDateTime.now().plusMinutes(10);
+
+        String verificationCode =
+                String.format(
+                        "%08d",
+                        SECURE_RANDOM.nextInt(100_000_000)
+                );
+
+        try {
+            jdbc.update(
+                    DELETE_VERIFICATION_CODE_BY_USER_ID,
+                    Map.of("id", user.getId())
+            );
+
+            MapSqlParameterSource parameters =
+                    new MapSqlParameterSource()
+                            .addValue("userId", user.getId())
+                            .addValue("code", verificationCode)
+                            .addValue("expirationDate", expirationDate);
+
+            jdbc.update(
+                    INSERT_VERIFICATION_CODE_QUERY,
+                    parameters
+            );
+
+            return verificationCode;
+
+        } catch (Exception exception) {
+            log.error(
+                    "Failed to create verification code for user ID {}",
+                    user.getId(),
+                    exception
+            );
+
+            throw new RuntimeException(
+                    "An error occurred while creating the verification code.",
+                    exception
+            );
         }
     }
 
