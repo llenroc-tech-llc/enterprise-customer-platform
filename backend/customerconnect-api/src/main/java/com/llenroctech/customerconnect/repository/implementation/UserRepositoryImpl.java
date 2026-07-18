@@ -155,6 +155,19 @@ public class UserRepositoryImpl implements UserRepository<User> {
         }
     }
 
+    @Override
+    @Transactional
+    public boolean verifyCode(String email, String code) {
+        int deleted = jdbc.update(
+                CONSUME_VALID_VERIFICATION_CODE_QUERY,
+                Map.of(
+                        "email", email.trim().toLowerCase(),
+                        "code", code.trim()
+                )
+        );
+        return deleted == 1;
+    }
+
     private Integer getEmailCount(String email) {
         return jdbc.queryForObject(COUNT_USER_EMAIL_QUERY, Map.of("email", email), Integer.class);
     }

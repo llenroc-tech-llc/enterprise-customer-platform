@@ -8,4 +8,6 @@ public interface UserService {
     UserDTO getUserByEmail(String email);
 
     void sendVerificationCode(UserDTO userDTO);
+
+    boolean verifyCode(String email, String code);
 }

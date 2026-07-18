@@ -29,4 +29,15 @@ public class UserQuery {
             VALUES
                 (:userId, :code, :expirationDate)
             """;
+
+    public static final String CONSUME_VALID_VERIFICATION_CODE_QUERY =
+            """
+            DELETE verification
+            FROM TwoFactorVerifications verification
+            INNER JOIN Users user
+                ON user.id = verification.user_id
+            WHERE user.email = :email
+              AND verification.code = :code
+              AND verification.expiration_date > NOW()
+            """;
 }
