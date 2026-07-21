@@ -209,6 +209,41 @@ class LoginSecurityTest {
                 .andExpect(status().isUnauthorized());
     }
 
+    @Test
+    void validMfaCodeReturnsTokensAfterAtomicConsumption() throws Exception {
+        CustomerConnectUserPrincipal principal = principal(true);
+        when(userService.verifyCode(EMAIL, "48392157"))
+                .thenReturn(true);
+        when(userDetailsService.loadUserByUsername(EMAIL)).thenReturn(principal);
+        when(userService.getUserByEmail(EMAIL)).thenReturn(userDto());
+
+        mockMvc.perform(post("/user/verify-code")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(verificationJson("48392157")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.accessToken").isNotEmpty())
+                .andExpect(jsonPath("$.data.refreshToken").doesNotExist())
+                .andExpect(header().string(
+                        HttpHeaders.SET_COOKIE,
+                        containsString("refreshToken=")
+                ));
+    }
+
+    @Test
+    void failedMfaVerificationReturnsUnauthorizedWithoutTokens() throws Exception {
+        when(userService.verifyCode(EMAIL, "00000000"))
+                .thenReturn(false);
+
+        mockMvc.perform(post("/user/verify-code")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(verificationJson("00000000")))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.data.accessToken").doesNotExist())
+                .andExpect(header().doesNotExist(HttpHeaders.SET_COOKIE));
+
+        verify(userDetailsService, never()).loadUserByUsername(EMAIL);
+    }
+
     private CustomerConnectUserPrincipal principal(boolean enabled) {
         User user = User.builder()
                 .id(1L)
@@ -245,6 +280,15 @@ class LoginSecurityTest {
                 .withExpiresAt(expiration)
                 .withClaim("token_type", "refresh")
                 .sign(Algorithm.HMAC512(TEST_SECRET));
+    }
+
+    private String verificationJson(String code) {
+        return """
+                {
+                  "email": "cornell@example.com",
+                  "code": "%s"
+                }
+                """.formatted(code);
     }
 
     private String extractRefreshToken(MvcResult result) {

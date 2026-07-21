@@ -6,6 +6,7 @@ import com.llenroctech.customerconnect.config.JwtProperties;
 import com.llenroctech.customerconnect.dto.UserDTO;
 import com.llenroctech.customerconnect.provider.TokenProvider;
 import com.llenroctech.customerconnect.request.LoginRequest;
+import com.llenroctech.customerconnect.request.MfaVerificationRequest;
 import com.llenroctech.customerconnect.security.model.CustomerConnectUserPrincipal;
 import com.llenroctech.customerconnect.service.UserService;
 import com.auth0.jwt.exceptions.JWTVerificationException;
@@ -118,6 +119,30 @@ public class UserResource {
                     exception
             );
         }
+    }
+
+    @PostMapping("/verify-code")
+    public ResponseEntity<HttpResponse> verifyMfaCode(
+            @RequestBody @Valid MfaVerificationRequest request,
+            HttpServletResponse response
+    ) {
+        if (!userService.verifyCode(
+                request.getEmail(),
+                request.getCode()
+        )) {
+            throw new BadCredentialsException("Verification code is invalid");
+        }
+
+        CustomerConnectUserPrincipal principal = requirePrincipal(
+                userDetailsService.loadUserByUsername(request.getEmail())
+        );
+        validateAccountStatus(principal);
+
+        return sendLoginResponse(
+                userService.getUserByEmail(request.getEmail()),
+                principal,
+                response
+        );
     }
 
     @PostMapping("/register")
