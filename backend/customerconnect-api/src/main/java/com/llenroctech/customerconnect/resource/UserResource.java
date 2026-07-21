@@ -25,6 +25,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -162,6 +163,26 @@ public class UserResource {
                                 .statusCode(CREATED.value())
                                 .build()
                 );
+    }
+
+    @GetMapping("/profile")
+    public ResponseEntity<HttpResponse> getProfile(Authentication authentication) {
+        CustomerConnectUserPrincipal principal = requirePrincipal(
+                authentication.getPrincipal()
+        );
+
+        return ResponseEntity.ok(
+                HttpResponse.builder()
+                        .timestamp(now().toString())
+                        .data(of(
+                                "user",
+                                userService.getUserByEmail(principal.getUsername())
+                        ))
+                        .message("User profile retrieved")
+                        .status(OK)
+                        .statusCode(OK.value())
+                        .build()
+        );
     }
 
     private ResponseEntity<HttpResponse> sendLoginResponse(
