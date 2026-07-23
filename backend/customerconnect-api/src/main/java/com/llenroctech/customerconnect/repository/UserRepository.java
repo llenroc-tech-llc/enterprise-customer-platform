@@ -20,7 +20,7 @@ public interface UserRepository<T extends User> {
 
     T getUserByEmail(String email);
 
-    String createVerificationCode(UserDTO userDTO);
+    String createVerificationCode(UserDTO userDTO, String verificationCode);
 
     boolean verifyCode(String email, String code);
 

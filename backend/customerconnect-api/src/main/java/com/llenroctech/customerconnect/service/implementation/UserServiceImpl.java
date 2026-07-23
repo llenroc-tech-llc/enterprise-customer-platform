@@ -16,6 +16,7 @@ import com.llenroctech.customerconnect.exception.InvalidPasswordResetTokenExcept
 import com.llenroctech.customerconnect.exception.InvalidAccountVerificationException;
 import com.llenroctech.customerconnect.provider.TokenProvider;
 import com.llenroctech.customerconnect.security.model.CustomerConnectUserPrincipal;
+import com.llenroctech.customerconnect.security.MfaCodeGenerator;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -34,6 +35,7 @@ public class UserServiceImpl implements UserService {
     private final BCryptPasswordEncoder passwordEncoder;
     private final TokenProvider tokenProvider;
     private final UserDetailsService userDetailsService;
+    private final MfaCodeGenerator mfaCodeGenerator;
 
     @Override
     @Transactional
@@ -54,7 +56,10 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void sendVerificationCode(UserDTO userDTO) {
         String verificationCode =
-                userRepository.createVerificationCode(userDTO);
+                userRepository.createVerificationCode(
+                        userDTO,
+                        mfaCodeGenerator.generate()
+                );
 
         smsService.sendVerificationCode(
                 userDTO.getPhone(),

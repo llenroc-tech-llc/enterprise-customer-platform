@@ -46,3 +46,9 @@ spring:
     init:
       mode: never
       continue-on-error: false
+
+app:
+  mfa:
+    # Required for users with MFA enabled. The value must be exactly eight
+    # digits and is never logged or returned by the API.
+    dev-code: ${APP_MFA_DEV_CODE:}

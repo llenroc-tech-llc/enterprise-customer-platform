@@ -272,6 +272,7 @@ class LoginSecurityTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.accessToken").isNotEmpty())
                 .andExpect(jsonPath("$.data.refreshToken").doesNotExist())
+                .andExpect(content().string(not(containsString("48392157"))))
                 .andExpect(header().string(
                         HttpHeaders.SET_COOKIE,
                         containsString("refreshToken=")

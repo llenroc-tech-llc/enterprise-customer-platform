@@ -28,7 +28,6 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
@@ -44,7 +43,6 @@ import static java.util.Objects.requireNonNull;
 @Slf4j
 public class UserRepositoryImpl implements UserRepository<User> {
 
-    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private static final long VERIFICATION_EXPIRATION_MINUTES = 10;
 
     private final NamedParameterJdbcTemplate jdbc;
@@ -130,14 +128,11 @@ public class UserRepositoryImpl implements UserRepository<User> {
 
     @Override
     @Transactional
-    public String createVerificationCode(UserDTO user) {
+    public String createVerificationCode(
+            UserDTO user,
+            String verificationCode
+    ) {
         LocalDateTime expirationDate = verificationExpirationDate();
-
-        String verificationCode =
-                String.format(
-                        "%08d",
-                        SECURE_RANDOM.nextInt(100_000_000)
-                );
 
         try {
             jdbc.update(

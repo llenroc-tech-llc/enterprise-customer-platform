@@ -7,6 +7,7 @@ import com.llenroctech.customerconnect.exception.ExpiredPasswordResetTokenExcept
 import com.llenroctech.customerconnect.exception.InvalidPasswordResetTokenException;
 import com.llenroctech.customerconnect.exception.InvalidAccountVerificationException;
 import com.llenroctech.customerconnect.security.model.CustomerConnectUserPrincipal;
+import com.llenroctech.customerconnect.security.MfaCodeGenerator;
 import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.llenroctech.customerconnect.repository.UserRepository;
@@ -40,10 +41,20 @@ class UserServiceImplTest {
     void sendsGeneratedVerificationCode() {
         UserRepository<User> repository = repository();
         UserDTO user = userWithPhone("+1 (555) 555-5262");
-        when(repository.createVerificationCode(user)).thenReturn(VERIFICATION_CODE);
         SmsService smsService = mock(SmsService.class);
+        MfaCodeGenerator codeGenerator = mock(MfaCodeGenerator.class);
+        when(codeGenerator.generate()).thenReturn(VERIFICATION_CODE);
+        when(repository.createVerificationCode(user, VERIFICATION_CODE))
+                .thenReturn(VERIFICATION_CODE);
 
-        service(repository, smsService, mock(BCryptPasswordEncoder.class))
+        service(
+                repository,
+                smsService,
+                mock(BCryptPasswordEncoder.class),
+                mock(TokenProvider.class),
+                mock(UserDetailsService.class),
+                codeGenerator
+        )
                 .sendVerificationCode(user);
 
         verify(smsService).sendVerificationCode(
@@ -395,7 +406,8 @@ class UserServiceImplTest {
                 smsService,
                 encoder,
                 mock(TokenProvider.class),
-                mock(UserDetailsService.class)
+                mock(UserDetailsService.class),
+                mock(MfaCodeGenerator.class)
         );
     }
 
@@ -406,12 +418,31 @@ class UserServiceImplTest {
             TokenProvider tokenProvider,
             UserDetailsService userDetailsService
     ) {
+        return service(
+                repository,
+                smsService,
+                encoder,
+                tokenProvider,
+                userDetailsService,
+                mock(MfaCodeGenerator.class)
+        );
+    }
+
+    private UserServiceImpl service(
+            UserRepository<User> repository,
+            SmsService smsService,
+            BCryptPasswordEncoder encoder,
+            TokenProvider tokenProvider,
+            UserDetailsService userDetailsService,
+            MfaCodeGenerator mfaCodeGenerator
+    ) {
         return new UserServiceImpl(
                 repository,
                 smsService,
                 encoder,
                 tokenProvider,
-                userDetailsService
+                userDetailsService,
+                mfaCodeGenerator
         );
     }
 

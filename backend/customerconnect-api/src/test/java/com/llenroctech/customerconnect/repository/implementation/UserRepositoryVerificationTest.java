@@ -3,6 +3,7 @@ package com.llenroctech.customerconnect.repository.implementation;
 import com.llenroctech.customerconnect.domain.Role;
 import com.llenroctech.customerconnect.domain.PasswordResetVerification;
 import com.llenroctech.customerconnect.domain.User;
+import com.llenroctech.customerconnect.dto.UserDTO;
 import com.llenroctech.customerconnect.exception.ExpiredPasswordResetTokenException;
 import com.llenroctech.customerconnect.exception.InvalidPasswordResetTokenException;
 import com.llenroctech.customerconnect.exception.InvalidAccountVerificationException;
@@ -50,6 +51,8 @@ import java.sql.Timestamp;
 import static com.llenroctech.customerconnect.query.UserQuery.DELETE_PASSWORD_RESET_TOKEN_QUERY;
 import static com.llenroctech.customerconnect.query.UserQuery.SELECT_PASSWORD_RESET_VERIFICATION_QUERY;
 import static com.llenroctech.customerconnect.query.UserQuery.UPDATE_USER_PASSWORD_QUERY;
+import static com.llenroctech.customerconnect.query.UserQuery.DELETE_VERIFICATION_CODE_BY_USER_ID;
+import static com.llenroctech.customerconnect.query.UserQuery.INSERT_VERIFICATION_CODE_QUERY;
 import static com.llenroctech.customerconnect.query.UserQuery.SELECT_ACCOUNT_VERIFICATION_QUERY;
 import static com.llenroctech.customerconnect.query.UserQuery.ENABLE_VERIFIED_ACCOUNT_QUERY;
 
@@ -94,6 +97,32 @@ class UserRepositoryVerificationTest {
                 .contains("verification.code = :code")
                 .contains("verification.expiration_date > NOW()")
                 .startsWith("DELETE verification");
+    }
+
+    @Test
+    void suppliedDevelopmentCodeIsPersistedWithTenMinuteExpiration() {
+        UserDTO user = new UserDTO();
+        user.setId(42L);
+        ArgumentCaptor<SqlParameterSource> parameters =
+                ArgumentCaptor.forClass(SqlParameterSource.class);
+
+        String persisted = repository.createVerificationCode(user, CODE);
+
+        InOrder ordered = inOrder(jdbc);
+        ordered.verify(jdbc).update(
+                DELETE_VERIFICATION_CODE_BY_USER_ID,
+                java.util.Map.of("id", 42L)
+        );
+        ordered.verify(jdbc).update(
+                eq(INSERT_VERIFICATION_CODE_QUERY),
+                parameters.capture()
+        );
+        assertThat(persisted).isEqualTo(CODE);
+        assertThat(parameters.getValue().getValue("code")).isEqualTo(CODE);
+        assertThat((LocalDateTime) parameters.getValue()
+                .getValue("expirationDate"))
+                .isAfter(LocalDateTime.now().plusMinutes(9))
+                .isBefore(LocalDateTime.now().plusMinutes(11));
     }
 
     @Test
