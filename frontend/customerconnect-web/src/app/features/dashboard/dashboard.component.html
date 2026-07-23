@@ -1,0 +1,49 @@
+<header class="page-heading">
+  <div>
+    <span class="eyebrow">Operations overview</span>
+    <h1>Good morning</h1>
+    <p>A clear view of today’s work across your organization.</p>
+  </div>
+  <button>Customize dashboard</button>
+</header>
+<p class="mock-label">Preview data · Dashboard API not yet available</p>
+<section class="metric-grid">
+  @for (metric of dashboard().metrics; track metric.label) {
+    <article [attr.data-tone]="metric.tone">
+      <div class="metric-icon">◈</div>
+      <span>{{ metric.label }}</span
+      ><strong>{{ metric.value }}</strong
+      ><small>{{ metric.change }}</small>
+    </article>
+  }
+</section>
+<section class="dashboard-grid">
+  <article class="activity">
+    <div class="card-title">
+      <div>
+        <span class="eyebrow">Live workspace</span>
+        <h2>Recent activity</h2>
+      </div>
+      <button>View all</button>
+    </div>
+    @for (item of dashboard().activity; track item[0]) {
+      <div class="activity-row">
+        <i></i>
+        <div>
+          <strong>{{ item[0] }}</strong
+          ><span>{{ item[1] }}</span>
+        </div>
+        <time>{{ item[2] }}</time>
+      </div>
+    }
+  </article>
+  <article class="insight">
+    <span class="ai-badge">✦ Llenroc AI</span>
+    <h2>Today’s operational insight</h2>
+    <p>
+      Invoice follow-up is trending above last week. AI-generated prioritization will appear here
+      once the secure backend integration is enabled.
+    </p>
+    <button>Explore AI assistant</button>
+  </article>
+</section>

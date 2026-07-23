@@ -1,0 +1,7 @@
+{
+  "name": "customerconnect-mobile",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular"
+}

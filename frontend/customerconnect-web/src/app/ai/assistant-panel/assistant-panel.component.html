@@ -1,0 +1,44 @@
+@if (open) {
+  <button class="panel-scrim" aria-label="Close AI assistant" (click)="closed.emit()"></button>
+  <aside aria-label="Llenroc AI assistant">
+    <header>
+      <div><span>✦ Llenroc AI</span><strong>Operations assistant</strong></div>
+      <button (click)="closed.emit()" aria-label="Close assistant">×</button>
+    </header>
+    <main>
+      @if (assistant.messages().length === 0) {
+        <div class="empty">
+          <div class="orb">✦</div>
+          <h2>How can I help today?</h2>
+          <p>Secure enterprise assistance is being prepared for Azure integration.</p>
+        </div>
+      }
+      @for (message of assistant.messages(); track $index) {
+        <div class="message" [class.user]="message.role === 'user'">{{ message.text }}</div>
+      }
+      @if (assistant.state() === 'unavailable') {
+        <div class="unavailable">
+          <strong>AI integration coming soon</strong>
+          <p>
+            Your request was not transmitted. Future responses will be authorized and audited
+            through the backend.
+          </p>
+        </div>
+      }
+      <section class="suggestions" aria-label="Suggested prompts">
+        @for (suggestion of suggestions; track suggestion) {
+          <button (click)="send(suggestion)">{{ suggestion }}</button>
+        }
+      </section>
+    </main>
+    <footer>
+      <label
+        ><span class="sr-only">Ask Llenroc AI</span
+        ><input
+          [(ngModel)]="prompt"
+          (keyup.enter)="send()"
+          placeholder="Ask about your operations…" /></label
+      ><button (click)="send()" aria-label="Send prompt">↑</button>
+    </footer>
+  </aside>
+}

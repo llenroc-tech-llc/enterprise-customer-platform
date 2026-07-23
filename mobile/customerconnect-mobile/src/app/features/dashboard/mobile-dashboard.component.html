@@ -1,0 +1,45 @@
+<ion-content [fullscreen]="true">
+  <ion-refresher slot="fixed" (ionRefresh)="refresh($event)"
+    ><ion-refresher-content
+  /></ion-refresher>
+  <main>
+    <header>
+      <div>
+        <span class="eyebrow">Operations overview</span>
+        <h1>Good morning</h1>
+      </div>
+      <button aria-label="Notifications">♢<i></i></button>
+    </header>
+    <p class="intro">Here’s what needs your attention today.</p>
+    <span class="mock">Preview data</span>
+    <section class="metrics">
+      @for (metric of metrics(); track metric[0]) {
+        <article>
+          <div>◈</div>
+          <span>{{ metric[0] }}</span
+          ><strong>{{ metric[1] }}</strong
+          ><small>{{ metric[2] }}</small>
+        </article>
+      }
+    </section>
+    <article class="insight">
+      <span>✦ Llenroc AI</span>
+      <h2>Your daily insight</h2>
+      <p>
+        Secure AI prioritization will appear here when the backend integration becomes available.
+      </p>
+      <a href="/tabs/ai">Open assistant →</a>
+    </article>
+    <section class="activity">
+      <h2>Recent activity</h2>
+      <div>
+        <i></i>
+        <p><strong>Invoice #1048 approved</strong><span>Finance workflow · 12 min ago</span></p>
+      </div>
+      <div>
+        <i></i>
+        <p><strong>Acme account updated</strong><span>Customer operations · 42 min ago</span></p>
+      </div>
+    </section>
+  </main>
+</ion-content>

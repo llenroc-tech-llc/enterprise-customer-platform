@@ -1,0 +1,136 @@
+ion-content {
+  --background: linear-gradient(160deg, #0b1739 0 34%, #f5f7fb 34%);
+}
+.auth-page {
+  min-height: 100%;
+  padding: calc(env(safe-area-inset-top) + 1.5rem) 1rem calc(env(safe-area-inset-bottom) + 1.5rem);
+  max-width: 660px;
+  margin: auto;
+}
+header {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  color: white;
+  margin: 0 0.35rem 2rem;
+}
+.brand-mark {
+  display: grid;
+  place-items: center;
+  width: 2.65rem;
+  aspect-ratio: 1;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #5b5fef, #7c3aed);
+  font-weight: 800;
+}
+header div:last-child {
+  display: grid;
+}
+header span {
+  color: #bac5dc;
+  font-size: 0.7rem;
+}
+.auth-card {
+  padding: clamp(1.25rem, 5vw, 2.2rem);
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 20px 55px rgb(11 23 57 / 0.18);
+}
+.eyebrow {
+  color: #5b5fef;
+  text-transform: uppercase;
+  letter-spacing: 0.13em;
+  font-size: 0.66rem;
+  font-weight: 800;
+}
+h1 {
+  margin: 0.55rem 0 1.5rem;
+  letter-spacing: -0.04em;
+  font-size: 2rem;
+}
+form {
+  display: grid;
+  gap: 0.8rem;
+}
+ion-item {
+  --background: #f8fafc;
+  --border-color: #dde3ec;
+  --border-radius: 12px;
+  --padding-start: 0.8rem;
+  --inner-padding-end: 0.8rem;
+  border: 1px solid #dde3ec;
+  border-radius: 12px;
+}
+ion-button {
+  margin-top: 0.8rem;
+  min-height: 50px;
+  --background: linear-gradient(135deg, #5b5fef, #7047e8);
+  --border-radius: 12px;
+  font-weight: 750;
+}
+.name-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+}
+.helper,
+.privacy {
+  color: #667085;
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+.privacy {
+  text-align: center;
+  margin-top: 1.5rem;
+}
+.alert {
+  padding: 0.75rem;
+  border-radius: 10px;
+  font-size: 0.8rem;
+}
+.alert.error {
+  color: #991b1b;
+  background: #fef2f2;
+}
+.alert.success {
+  color: #065f46;
+  background: #ecfdf5;
+}
+nav {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 1.2rem;
+}
+nav a {
+  color: #4c50dc;
+  text-decoration: none;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.link-state {
+  text-align: center;
+  padding: 1.5rem 0;
+}
+.link-state i {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  aspect-ratio: 1;
+  margin: auto;
+  border-radius: 50%;
+  font-style: normal;
+  font-weight: 800;
+}
+.link-state .success {
+  color: #047857;
+  background: #d1fae5;
+}
+.link-state .error {
+  color: #b91c1c;
+  background: #fee2e2;
+}
+@media (max-width: 440px) {
+  .name-grid {
+    grid-template-columns: 1fr;
+  }
+}
