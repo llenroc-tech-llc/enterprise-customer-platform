@@ -33,7 +33,7 @@ class JwtAuthenticationErrorResponderTest {
         assertThat(response.getContentType()).startsWith("application/json");
         assertThat(response.getCharacterEncoding()).isEqualTo("UTF-8");
         assertThat(response.getContentAsString())
-                .contains("Access token has expired.")
+                .contains("Your session has expired. Please sign in again.")
                 .contains("\"path\":\"/user/profile\"")
                 .doesNotContain("raw-secret-token");
     }

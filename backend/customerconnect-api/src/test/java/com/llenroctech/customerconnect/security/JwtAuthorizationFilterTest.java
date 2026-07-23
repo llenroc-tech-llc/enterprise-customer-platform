@@ -112,7 +112,7 @@ class JwtAuthorizationFilterTest {
         mockMvc.perform(get("/user/profile"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.message").value(
-                        "Authentication is required to access this resource."
+                        "Authentication is required."
                 ));
     }
 
@@ -138,7 +138,6 @@ class JwtAuthorizationFilterTest {
                 "READ:USER"
         );
         when(userDetailsService.loadUserByUsername(EMAIL)).thenReturn(current);
-        when(userService.getUserByEmail(EMAIL)).thenReturn(userDto());
 
         mockMvc.perform(get("/user/profile")
                         .header(HttpHeaders.AUTHORIZATION, bearer(accessToken())))
@@ -146,7 +145,7 @@ class JwtAuthorizationFilterTest {
                 .andExpect(jsonPath("$.data.user.email").value(EMAIL));
 
         verify(userDetailsService).loadUserByUsername(EMAIL);
-        verify(userService).getUserByEmail(EMAIL);
+        verify(userService, never()).getUserByEmail(EMAIL);
     }
 
     @Test
@@ -159,7 +158,7 @@ class JwtAuthorizationFilterTest {
         mockMvc.perform(delete("/user/delete/42")
                         .header(HttpHeaders.AUTHORIZATION, bearer(accessToken())))
                 .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.reason").value(
+                .andExpect(jsonPath("$.message").value(
                         "You do not have permission to access this resource."
                 ));
     }
@@ -232,6 +231,34 @@ class JwtAuthorizationFilterTest {
         mockMvc.perform(org.springframework.test.web.servlet.request
                         .MockMvcRequestBuilders.options("/user/profile"))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void authenticatedNonexistentGetReturnsStructuredNotFound()
+            throws Exception {
+        when(userDetailsService.loadUserByUsername(EMAIL)).thenReturn(
+                principal(true, true, "READ:USER")
+        );
+
+        mockMvc.perform(get("/does-not-exist")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(accessToken())))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.path").value("/does-not-exist"))
+                .andExpect(jsonPath("$.method").value("GET"));
+    }
+
+    @Test
+    void authenticatedNonexistentPostReturnsStructuredNotFound()
+            throws Exception {
+        when(userDetailsService.loadUserByUsername(EMAIL)).thenReturn(
+                principal(true, true, "READ:USER")
+        );
+
+        mockMvc.perform(post("/does-not-exist")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(accessToken())))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.path").value("/does-not-exist"))
+                .andExpect(jsonPath("$.method").value("POST"));
     }
 
     @Test

@@ -37,6 +37,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(
@@ -88,7 +89,6 @@ class LoginSecurityTest {
                 .thenReturn(principal(true));
         when(passwordEncoder.matches(PASSWORD, ENCODED_PASSWORD))
                 .thenReturn(true);
-        when(userService.getUserByEmail(EMAIL)).thenReturn(userDto());
 
         mockMvc.perform(post("/user/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -114,7 +114,7 @@ class LoginSecurityTest {
                 ));
 
         verify(userDetailsService).loadUserByUsername(EMAIL);
-        verify(userService).getUserByEmail(EMAIL);
+        verify(userService, never()).getUserByEmail(EMAIL);
     }
 
     @Test
@@ -125,13 +125,45 @@ class LoginSecurityTest {
         mockMvc.perform(post("/user/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(loginJson()))
-                .andExpect(status().isUnauthorized())
+                .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.message").value(
-                        "Authentication is required to access this resource."
+                        "Access is forbidden."
                 ));
 
         verify(userDetailsService).loadUserByUsername(EMAIL);
         verify(userService, never()).getUserByEmail(EMAIL);
+    }
+
+    @Test
+    void lockedUserIsRejected() throws Exception {
+        when(userDetailsService.loadUserByUsername(EMAIL))
+                .thenReturn(principal(true, false));
+
+        mockMvc.perform(post("/user/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(loginJson()))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").value(
+                        "Access is forbidden."
+                ));
+    }
+
+    @Test
+    void incorrectPasswordReturnsUnauthorizedWithoutLeakingCredentials()
+            throws Exception {
+        when(userDetailsService.loadUserByUsername(EMAIL))
+                .thenReturn(principal(true));
+        when(passwordEncoder.matches(PASSWORD, ENCODED_PASSWORD))
+                .thenReturn(false);
+
+        mockMvc.perform(post("/user/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(loginJson()))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message").value(
+                        "Authentication failed."
+                ))
+                .andExpect(content().string(not(containsString(PASSWORD))));
     }
 
     @Test
@@ -140,7 +172,6 @@ class LoginSecurityTest {
         when(userDetailsService.loadUserByUsername(EMAIL)).thenReturn(principal);
         when(passwordEncoder.matches(PASSWORD, ENCODED_PASSWORD))
                 .thenReturn(true);
-        when(userService.getUserByEmail(EMAIL)).thenReturn(userDto());
 
         MvcResult loginResult = mockMvc.perform(post("/user/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -217,7 +248,6 @@ class LoginSecurityTest {
         when(userService.verifyCode(EMAIL, "48392157"))
                 .thenReturn(true);
         when(userDetailsService.loadUserByUsername(EMAIL)).thenReturn(principal);
-        when(userService.getUserByEmail(EMAIL)).thenReturn(userDto());
 
         mockMvc.perform(post("/user/verify-code")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -247,12 +277,19 @@ class LoginSecurityTest {
     }
 
     private CustomerConnectUserPrincipal principal(boolean enabled) {
+        return principal(enabled, true);
+    }
+
+    private CustomerConnectUserPrincipal principal(
+            boolean enabled,
+            boolean notLocked
+    ) {
         User user = User.builder()
                 .id(1L)
                 .email(EMAIL)
                 .password(ENCODED_PASSWORD)
                 .enabled(enabled)
-                .isNotLocked(true)
+                .isNotLocked(notLocked)
                 .build();
         return new CustomerConnectUserPrincipal(user, "READ:USER");
     }
