@@ -10,6 +10,8 @@ import com.llenroctech.customerconnect.rowmapper.UserRowMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
@@ -68,6 +70,14 @@ public class UserRepositoryImpl implements UserRepository<User> {
             user.setNotLocked(true);
 
             return user;
+        } catch (DuplicateKeyException exception) {
+            log.warn("User creation rejected by a uniqueness constraint");
+            throw new UserAlreadyExistsException(
+                    "An account with that email already exists."
+            );
+        } catch (DataIntegrityViolationException exception) {
+            log.warn("User creation rejected by a data integrity constraint");
+            throw exception;
         } catch (Exception exception) {
             log.error("Error creating user", exception);
             throw new RuntimeException(exception);
@@ -105,7 +115,7 @@ public class UserRepositoryImpl implements UserRepository<User> {
         } catch (EmptyResultDataAccessException exception) {
             return null;
         } catch (Exception exception) {
-            log.error("Error retrieving user by email: {}", email, exception);
+            log.error("Error retrieving user by normalized account identifier", exception);
             throw exception;
         }
     }

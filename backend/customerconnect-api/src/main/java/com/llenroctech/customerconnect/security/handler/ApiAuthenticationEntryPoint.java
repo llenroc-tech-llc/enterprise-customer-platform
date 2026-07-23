@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 import static java.time.LocalDateTime.now;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
@@ -27,15 +28,22 @@ public class ApiAuthenticationEntryPoint implements AuthenticationEntryPoint {
             HttpServletResponse response,
             AuthenticationException authenticationException
     ) throws IOException {
+        if (response.isCommitted()) {
+            return;
+        }
 
         HttpResponse httpResponse = HttpResponse.builder()
                 .timestamp(now().toString())
-                .message("Authentication is required to access this resource.")
+                .reason(UNAUTHORIZED.getReasonPhrase())
+                .message("Authentication is required.")
                 .status(UNAUTHORIZED)
                 .statusCode(UNAUTHORIZED.value())
+                .path(request.getRequestURI())
+                .method(request.getMethod())
                 .build();
 
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         response.setStatus(UNAUTHORIZED.value());
 
         objectMapper.writeValue(

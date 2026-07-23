@@ -69,6 +69,7 @@ public class JwtAuthenticationErrorResponder {
                 .reason(error.status().getReasonPhrase())
                 .message(error.message())
                 .path(path)
+                .method(request.getMethod())
                 .build();
 
         response.setStatus(error.status().value());
@@ -79,7 +80,10 @@ public class JwtAuthenticationErrorResponder {
 
     private ErrorDetails classify(Exception exception) {
         if (exception instanceof TokenExpiredException) {
-            return new ErrorDetails(UNAUTHORIZED, "Access token has expired.");
+            return new ErrorDetails(
+                    UNAUTHORIZED,
+                    "Your session has expired. Please sign in again."
+            );
         }
         if (exception instanceof DisabledException) {
             return new ErrorDetails(FORBIDDEN, "Account is disabled.");
@@ -89,7 +93,7 @@ public class JwtAuthenticationErrorResponder {
         }
         if (exception instanceof JWTVerificationException
                 || exception instanceof IllegalArgumentException) {
-            return new ErrorDetails(UNAUTHORIZED, "Access token is invalid.");
+            return new ErrorDetails(UNAUTHORIZED, "Authentication is required.");
         }
         if (exception instanceof BadCredentialsException
                 || exception instanceof UsernameNotFoundException) {

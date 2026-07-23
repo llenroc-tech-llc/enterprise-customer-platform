@@ -67,14 +67,16 @@ public class UserResource {
                 )
         );
 
-        UserDTO userDTO =
-                userService.getUserByEmail(loginRequest.getEmail());
+        CustomerConnectUserPrincipal principal = requirePrincipal(
+                authentication.getPrincipal()
+        );
+        UserDTO userDTO = principal.getUserDto();
 
         return userDTO.isUsingMfa()
                 ? sendVerificationCode(userDTO)
                 : sendLoginResponse(
                         userDTO,
-                        requirePrincipal(authentication.getPrincipal()),
+                        principal,
                         response
                 );
     }
@@ -139,11 +141,7 @@ public class UserResource {
         );
         validateAccountStatus(principal);
 
-        return sendLoginResponse(
-                userService.getUserByEmail(request.getEmail()),
-                principal,
-                response
-        );
+        return sendLoginResponse(principal.getUserDto(), principal, response);
     }
 
     @PostMapping("/register")
@@ -176,7 +174,7 @@ public class UserResource {
                         .timestamp(now().toString())
                         .data(of(
                                 "user",
-                                userService.getUserByEmail(principal.getUsername())
+                                principal.getUserDto()
                         ))
                         .message("User profile retrieved")
                         .status(OK)

@@ -1,7 +1,8 @@
 package com.llenroctech.customerconnect.security.model;
 
 import com.llenroctech.customerconnect.domain.User;
-import lombok.RequiredArgsConstructor;
+import com.llenroctech.customerconnect.dto.UserDTO;
+import com.llenroctech.customerconnect.dtomapper.UserDTOMapper;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -10,11 +11,17 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-@RequiredArgsConstructor
 public class CustomerConnectUserPrincipal implements UserDetails {
 
-    private final User user;
+    private final UserDTO user;
+    private final String encodedPassword;
     private final String permissions;
+
+    public CustomerConnectUserPrincipal(User user, String permissions) {
+        this.user = UserDTOMapper.fromUser(user);
+        this.encodedPassword = user.getPassword();
+        this.permissions = permissions;
+    }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -34,9 +41,13 @@ public class CustomerConnectUserPrincipal implements UserDetails {
         return user.getId();
     }
 
+    public UserDTO getUserDto() {
+        return user;
+    }
+
     @Override
     public String getPassword() {
-        return user.getPassword();
+        return encodedPassword;
     }
 
     @Override
