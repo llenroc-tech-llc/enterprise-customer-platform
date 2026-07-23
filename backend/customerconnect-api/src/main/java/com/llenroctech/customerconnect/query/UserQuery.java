@@ -30,6 +30,47 @@ public class UserQuery {
                 (:userId, :code, :expirationDate)
             """;
 
+    public static final String DELETE_PASSWORD_RESET_BY_USER_ID_QUERY =
+            """
+            DELETE FROM ResetPasswordVerifications
+            WHERE user_id = :userId
+            """;
+
+    public static final String INSERT_PASSWORD_RESET_QUERY =
+            """
+            INSERT INTO ResetPasswordVerifications
+                (user_id, url, expiration_date)
+            VALUES
+                (:userId, :url, :expirationDate)
+            """;
+
+    public static final String SELECT_PASSWORD_RESET_VERIFICATION_QUERY =
+            """
+            SELECT
+                verification.user_id,
+                verification.expiration_date,
+                user.enabled,
+                user.non_locked
+            FROM ResetPasswordVerifications verification
+            INNER JOIN Users user
+                ON user.id = verification.user_id
+            WHERE verification.url = :url
+            """;
+
+    public static final String UPDATE_USER_PASSWORD_QUERY =
+            """
+            UPDATE Users
+            SET password = :password
+            WHERE id = :userId
+            """;
+
+    public static final String DELETE_PASSWORD_RESET_TOKEN_QUERY =
+            """
+            DELETE FROM ResetPasswordVerifications
+            WHERE user_id = :userId
+              AND url = :url
+            """;
+
     public static final String CONSUME_VALID_VERIFICATION_CODE_QUERY =
             """
             DELETE verification

@@ -50,6 +50,15 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(HttpMethod.POST, PUBLIC_URLS).permitAll()
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/user/reset-password/*",
+                                "/user/verify/password/*"
+                        ).permitAll()
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/user/reset-password"
+                        ).permitAll()
 
                         .requestMatchers(
                                 HttpMethod.DELETE,

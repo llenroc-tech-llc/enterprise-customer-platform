@@ -7,6 +7,7 @@ import com.llenroctech.customerconnect.dto.UserDTO;
 import com.llenroctech.customerconnect.provider.TokenProvider;
 import com.llenroctech.customerconnect.request.LoginRequest;
 import com.llenroctech.customerconnect.request.MfaVerificationRequest;
+import com.llenroctech.customerconnect.request.PasswordResetRequest;
 import com.llenroctech.customerconnect.security.model.CustomerConnectUserPrincipal;
 import com.llenroctech.customerconnect.service.UserService;
 import com.auth0.jwt.exceptions.JWTVerificationException;
@@ -27,6 +28,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -177,6 +179,59 @@ public class UserResource {
                                 principal.getUserDto()
                         ))
                         .message("User profile retrieved")
+                        .status(OK)
+                        .statusCode(OK.value())
+                        .build()
+        );
+    }
+
+    @GetMapping("/reset-password/{email}")
+    public ResponseEntity<HttpResponse> requestPasswordReset(
+            @PathVariable String email
+    ) {
+        userService.requestPasswordReset(email);
+
+        return ResponseEntity.ok(
+                HttpResponse.builder()
+                        .timestamp(now().toString())
+                        .message(
+                                "If an account exists for this email address, " +
+                                        "password reset instructions will be sent."
+                        )
+                        .status(OK)
+                        .statusCode(OK.value())
+                        .build()
+        );
+    }
+
+    @GetMapping("/verify/password/{token}")
+    public ResponseEntity<HttpResponse> verifyPasswordResetToken(
+            @PathVariable String token
+    ) {
+        var verification =
+                userService.verifyPasswordResetToken(token);
+
+        return ResponseEntity.ok(
+                HttpResponse.builder()
+                        .timestamp(now().toString())
+                        .message("Please enter a new password.")
+                        .data(of("valid", verification.valid()))
+                        .status(OK)
+                        .statusCode(OK.value())
+                        .build()
+        );
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<HttpResponse> resetPassword(
+            @RequestBody @Valid PasswordResetRequest request
+    ) {
+        userService.resetPassword(request);
+
+        return ResponseEntity.ok(
+                HttpResponse.builder()
+                        .timestamp(now().toString())
+                        .message("Password reset successfully.")
                         .status(OK)
                         .statusCode(OK.value())
                         .build()
