@@ -261,6 +261,23 @@ public class ApiExceptionHandler {
         );
     }
 
+    @ExceptionHandler(InvalidAccountVerificationException.class)
+    public ResponseEntity<HttpResponse> handleAccountVerificationFailure(
+            InvalidAccountVerificationException exception,
+            HttpServletRequest request
+    ) {
+        log.warn(
+                "Account verification rejected for {} {}",
+                request.getMethod(),
+                request.getRequestURI()
+        );
+        return response(
+                BAD_REQUEST,
+                "This account verification link is invalid.",
+                request
+        );
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<HttpResponse> handleUnexpected(
             Exception exception,

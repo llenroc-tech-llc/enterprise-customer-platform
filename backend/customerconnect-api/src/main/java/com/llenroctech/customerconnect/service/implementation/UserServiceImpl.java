@@ -5,16 +5,25 @@ import com.llenroctech.customerconnect.domain.EmailAddress;
 import com.llenroctech.customerconnect.dto.UserDTO;
 import com.llenroctech.customerconnect.dto.PasswordResetVerificationResponse;
 import com.llenroctech.customerconnect.domain.PasswordResetVerification;
+import com.llenroctech.customerconnect.domain.RefreshedTokens;
+import com.llenroctech.customerconnect.dto.AccountVerificationResult;
 import com.llenroctech.customerconnect.dtomapper.UserDTOMapper;
 import com.llenroctech.customerconnect.repository.UserRepository;
 import com.llenroctech.customerconnect.service.SmsService;
 import com.llenroctech.customerconnect.service.UserService;
 import com.llenroctech.customerconnect.request.PasswordResetRequest;
 import com.llenroctech.customerconnect.exception.InvalidPasswordResetTokenException;
+import com.llenroctech.customerconnect.exception.InvalidAccountVerificationException;
+import com.llenroctech.customerconnect.provider.TokenProvider;
+import com.llenroctech.customerconnect.security.model.CustomerConnectUserPrincipal;
+import com.auth0.jwt.exceptions.JWTVerificationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 
 @Service
 @RequiredArgsConstructor
@@ -23,6 +32,8 @@ public class UserServiceImpl implements UserService {
     private final UserRepository<User> userRepository;
     private final SmsService smsService;
     private final BCryptPasswordEncoder passwordEncoder;
+    private final TokenProvider tokenProvider;
+    private final UserDetailsService userDetailsService;
 
     @Override
     @Transactional
@@ -54,6 +65,50 @@ public class UserServiceImpl implements UserService {
     @Override
     public boolean verifyCode(String email, String code) {
         return userRepository.verifyCode(email, code);
+    }
+
+    @Override
+    @Transactional
+    public AccountVerificationResult verifyAccount(String key) {
+        if (key == null || key.isBlank()) {
+            throw new InvalidAccountVerificationException(
+                    "Account verification key is required"
+            );
+        }
+        return new AccountVerificationResult(
+                userRepository.verifyAccount(key.trim())
+        );
+    }
+
+    @Override
+    public RefreshedTokens refreshAccessToken(String refreshToken) {
+        if (refreshToken == null || refreshToken.isBlank()) {
+            throw new BadCredentialsException("Refresh token is required");
+        }
+
+        try {
+            String subject = tokenProvider.verifyRefreshToken(refreshToken)
+                    .getSubject();
+            if (subject == null || subject.isBlank()) {
+                throw new BadCredentialsException(
+                        "Refresh token subject is invalid"
+                );
+            }
+
+            CustomerConnectUserPrincipal principal = requirePrincipal(
+                    userDetailsService.loadUserByUsername(subject)
+            );
+            validateAccountStatus(principal);
+            return new RefreshedTokens(
+                    tokenProvider.createAccessToken(principal),
+                    tokenProvider.createRefreshToken(principal)
+            );
+        } catch (JWTVerificationException exception) {
+            throw new BadCredentialsException(
+                    "Refresh token is invalid",
+                    exception
+            );
+        }
     }
 
     @Override
@@ -120,5 +175,23 @@ public class UserServiceImpl implements UserService {
             );
         }
         return token.trim();
+    }
+
+    private CustomerConnectUserPrincipal requirePrincipal(
+            UserDetails userDetails
+    ) {
+        if (userDetails instanceof CustomerConnectUserPrincipal principal) {
+            return principal;
+        }
+        throw new BadCredentialsException("Authenticated user is invalid");
+    }
+
+    private void validateAccountStatus(UserDetails userDetails) {
+        if (!userDetails.isEnabled()
+                || !userDetails.isAccountNonLocked()
+                || !userDetails.isAccountNonExpired()
+                || !userDetails.isCredentialsNonExpired()) {
+            throw new BadCredentialsException("User account is unavailable");
+        }
     }
 }

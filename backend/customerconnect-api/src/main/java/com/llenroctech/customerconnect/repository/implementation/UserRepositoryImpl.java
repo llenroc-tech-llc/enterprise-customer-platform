@@ -8,6 +8,7 @@ import com.llenroctech.customerconnect.dto.UserDTO;
 import com.llenroctech.customerconnect.exception.UserAlreadyExistsException;
 import com.llenroctech.customerconnect.exception.ExpiredPasswordResetTokenException;
 import com.llenroctech.customerconnect.exception.InvalidPasswordResetTokenException;
+import com.llenroctech.customerconnect.exception.InvalidAccountVerificationException;
 import com.llenroctech.customerconnect.repository.RoleRepository;
 import com.llenroctech.customerconnect.repository.UserRepository;
 import com.llenroctech.customerconnect.rowmapper.UserRowMapper;
@@ -35,7 +36,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import static com.llenroctech.customerconnect.enumeration.RoleType.ROLE_USER;
-import static com.llenroctech.customerconnect.enumeration.VerificationType.ACCOUNT;
 import static com.llenroctech.customerconnect.query.UserQuery.*;
 import static java.util.Objects.requireNonNull;
 
@@ -67,7 +67,9 @@ public class UserRepositoryImpl implements UserRepository<User> {
 
             user.setId(requireNonNull(holder.getKey()).longValue());
             roleRepository.addRoleToUser(user.getId(), ROLE_USER.name());
-            String verificationUrl = buildVerificationUrl(UUID.randomUUID().toString(), ACCOUNT.getType());
+            String verificationUrl = buildAccountVerificationUrl(
+                    UUID.randomUUID().toString()
+            );
 
             jdbc.update(INSERT_ACCOUNT_VERIFICATION_URL_QUERY, Map.of("userId", user.getId(), "url", verificationUrl));
             //TODO: Set up email service
@@ -181,6 +183,42 @@ public class UserRepositoryImpl implements UserRepository<User> {
                 )
         );
         return deleted == 1;
+    }
+
+    @Override
+    public boolean verifyAccount(String key) {
+        String verificationUrl = buildAccountVerificationUrl(
+                requireVerificationKey(key)
+        );
+
+        try {
+            AccountVerification accountVerification = jdbc.queryForObject(
+                    SELECT_ACCOUNT_VERIFICATION_QUERY,
+                    Map.of("url", verificationUrl),
+                    (resultSet, rowNumber) -> new AccountVerification(
+                            resultSet.getLong("user_id"),
+                            resultSet.getBoolean("enabled")
+                    )
+            );
+            if (accountVerification.alreadyVerified()) {
+                return true;
+            }
+
+            int updated = jdbc.update(
+                    ENABLE_VERIFIED_ACCOUNT_QUERY,
+                    Map.of("userId", accountVerification.userId())
+            );
+            if (updated != 1) {
+                throw new IllegalStateException(
+                        "Account verification update failed"
+                );
+            }
+            return false;
+        } catch (EmptyResultDataAccessException exception) {
+            throw new InvalidAccountVerificationException(
+                    "Account verification record was not found"
+            );
+        }
     }
 
     @Override
@@ -299,8 +337,24 @@ public class UserRepositoryImpl implements UserRepository<User> {
                 .addValue("password", encoder.encode(user.getPassword()));
     }
 
-    private String buildVerificationUrl(String key, String type) {
-        return ServletUriComponentsBuilder.fromCurrentContextPath().path("/user/verify/" + type + "/" + key).toUriString();
+    /*
+     * Verification records are retained for course-compatible audit analytics.
+     * Production hardening should store a SHA-256 token hash, not the raw URL.
+     */
+    private String buildAccountVerificationUrl(String key) {
+        return ServletUriComponentsBuilder.fromCurrentContextPath()
+                .path("/user/verify/account/{key}")
+                .buildAndExpand(key)
+                .toUriString();
+    }
+
+    private String requireVerificationKey(String key) {
+        if (key == null || key.isBlank()) {
+            throw new InvalidAccountVerificationException(
+                    "Account verification key is required"
+            );
+        }
+        return key.trim();
     }
 
     /*
@@ -327,5 +381,11 @@ public class UserRepositoryImpl implements UserRepository<User> {
         return LocalDateTime.now().plusMinutes(
                 VERIFICATION_EXPIRATION_MINUTES
         );
+    }
+
+    private record AccountVerification(
+            long userId,
+            boolean alreadyVerified
+    ) {
     }
 }

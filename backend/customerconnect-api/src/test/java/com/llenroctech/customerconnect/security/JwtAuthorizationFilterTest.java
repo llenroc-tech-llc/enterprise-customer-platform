@@ -7,6 +7,8 @@ import com.llenroctech.customerconnect.config.SecurityConfig;
 import com.llenroctech.customerconnect.domain.User;
 import com.llenroctech.customerconnect.dto.UserDTO;
 import com.llenroctech.customerconnect.dto.PasswordResetVerificationResponse;
+import com.llenroctech.customerconnect.dto.AccountVerificationResult;
+import com.llenroctech.customerconnect.exception.InvalidAccountVerificationException;
 import com.llenroctech.customerconnect.provider.TokenProvider;
 import com.llenroctech.customerconnect.resource.UserResource;
 import com.llenroctech.customerconnect.security.filter.JwtAuthorizationFilter;
@@ -174,6 +176,55 @@ class JwtAuthorizationFilterTest {
                 )))
                 .andExpect(content().string(org.hamcrest.Matchers.not(
                         org.hamcrest.Matchers.containsString("NewPassword123!")
+                )));
+    }
+
+    @Test
+    void accountVerificationIsPublicAndReturnsSafeResult() throws Exception {
+        when(userService.verifyAccount("verification-key"))
+                .thenReturn(new AccountVerificationResult(false));
+
+        mockMvc.perform(get("/user/verify/account/verification-key"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Account verified."))
+                .andExpect(jsonPath("$.data.alreadyVerified").value(false))
+                .andExpect(content().string(org.hamcrest.Matchers.not(
+                        org.hamcrest.Matchers.containsString(
+                                "verification-key"
+                        )
+                )));
+    }
+
+    @Test
+    void repeatedAccountVerificationReportsAlreadyVerified()
+            throws Exception {
+        when(userService.verifyAccount("verification-key"))
+                .thenReturn(new AccountVerificationResult(true));
+
+        mockMvc.perform(get("/user/verify/account/verification-key"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value(
+                        "Account already verified."
+                ))
+                .andExpect(jsonPath("$.data.alreadyVerified").value(true));
+    }
+
+    @Test
+    void invalidAccountVerificationUsesSafeStructuredError()
+            throws Exception {
+        when(userService.verifyAccount("unknown-key"))
+                .thenThrow(new InvalidAccountVerificationException("detail"));
+
+        mockMvc.perform(get("/user/verify/account/unknown-key"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(
+                        "This account verification link is invalid."
+                ))
+                .andExpect(jsonPath("$.path").value(
+                        "/user/verify/account/unknown-key"
+                ))
+                .andExpect(content().string(org.hamcrest.Matchers.not(
+                        org.hamcrest.Matchers.containsString("detail")
                 )));
     }
 

@@ -13,6 +13,25 @@ public class UserQuery {
             "INSERT INTO AccountVerifications (user_id, url, `date`) " +
                     "VALUES (:userId, :url, NOW())";
 
+    public static final String SELECT_ACCOUNT_VERIFICATION_QUERY =
+            """
+            SELECT
+                user.id AS user_id,
+                user.enabled
+            FROM AccountVerifications verification
+            INNER JOIN Users user
+                ON user.id = verification.user_id
+            WHERE verification.url = :url
+            """;
+
+    public static final String ENABLE_VERIFIED_ACCOUNT_QUERY =
+            """
+            UPDATE Users
+            SET enabled = TRUE
+            WHERE id = :userId
+              AND enabled = FALSE
+            """;
+
     public static final String SELECT_USER_BY_EMAIL_QUERY =
             "SELECT * FROM Users WHERE email = :email";
 

@@ -24,6 +24,8 @@ public interface UserRepository<T extends User> {
 
     boolean verifyCode(String email, String code);
 
+    boolean verifyAccount(String key);
+
     void requestPasswordReset(String email);
 
     PasswordResetVerification findPasswordResetVerification(String token);

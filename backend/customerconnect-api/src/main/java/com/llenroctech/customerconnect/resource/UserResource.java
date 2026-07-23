@@ -10,7 +10,6 @@ import com.llenroctech.customerconnect.request.MfaVerificationRequest;
 import com.llenroctech.customerconnect.request.PasswordResetRequest;
 import com.llenroctech.customerconnect.security.model.CustomerConnectUserPrincipal;
 import com.llenroctech.customerconnect.service.UserService;
-import com.auth0.jwt.exceptions.JWTVerificationException;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -95,35 +94,21 @@ public class UserResource {
             throw new BadCredentialsException("Refresh token is required");
         }
 
-        try {
-            String email = tokenProvider.verifyRefreshToken(refreshToken)
-                    .getSubject();
-            CustomerConnectUserPrincipal principal = requirePrincipal(
-                    userDetailsService.loadUserByUsername(email)
-            );
-            validateAccountStatus(principal);
+        var refreshedTokens = userService.refreshAccessToken(refreshToken);
+        addRefreshTokenCookie(response, refreshedTokens.refreshToken());
 
-            String accessToken = tokenProvider.createAccessToken(principal);
-            addRefreshTokenCookie(
-                    response,
-                    tokenProvider.createRefreshToken(principal)
-            );
-
-            return ResponseEntity.ok(
-                    HttpResponse.builder()
-                            .timestamp(now().toString())
-                            .data(of("accessToken", accessToken))
-                            .message("Token refreshed")
-                            .status(OK)
-                            .statusCode(OK.value())
-                            .build()
-            );
-        } catch (JWTVerificationException exception) {
-            throw new BadCredentialsException(
-                    "Refresh token is invalid",
-                    exception
-            );
-        }
+        return ResponseEntity.ok(
+                HttpResponse.builder()
+                        .timestamp(now().toString())
+                        .data(of(
+                                "accessToken",
+                                refreshedTokens.accessToken()
+                        ))
+                        .message("Token refreshed.")
+                        .status(OK)
+                        .statusCode(OK.value())
+                        .build()
+        );
     }
 
     @PostMapping("/verify-code")
@@ -179,6 +164,29 @@ public class UserResource {
                                 principal.getUserDto()
                         ))
                         .message("User profile retrieved")
+                        .status(OK)
+                        .statusCode(OK.value())
+                        .build()
+        );
+    }
+
+    @GetMapping("/verify/account/{key}")
+    public ResponseEntity<HttpResponse> verifyAccount(
+            @PathVariable String key
+    ) {
+        var result = userService.verifyAccount(key);
+        String message = result.alreadyVerified()
+                ? "Account already verified."
+                : "Account verified.";
+
+        return ResponseEntity.ok(
+                HttpResponse.builder()
+                        .timestamp(now().toString())
+                        .data(of(
+                                "alreadyVerified",
+                                result.alreadyVerified()
+                        ))
+                        .message(message)
                         .status(OK)
                         .statusCode(OK.value())
                         .build()

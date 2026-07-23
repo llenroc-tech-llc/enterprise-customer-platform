@@ -5,11 +5,19 @@ import com.llenroctech.customerconnect.domain.User;
 import com.llenroctech.customerconnect.dto.UserDTO;
 import com.llenroctech.customerconnect.exception.ExpiredPasswordResetTokenException;
 import com.llenroctech.customerconnect.exception.InvalidPasswordResetTokenException;
+import com.llenroctech.customerconnect.exception.InvalidAccountVerificationException;
+import com.llenroctech.customerconnect.security.model.CustomerConnectUserPrincipal;
+import com.auth0.jwt.exceptions.JWTDecodeException;
+import com.auth0.jwt.interfaces.DecodedJWT;
 import com.llenroctech.customerconnect.repository.UserRepository;
 import com.llenroctech.customerconnect.request.PasswordResetRequest;
 import com.llenroctech.customerconnect.service.SmsService;
+import com.llenroctech.customerconnect.provider.TokenProvider;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -57,6 +65,112 @@ class UserServiceImplTest {
         ).verifyCode("user@example.com", VERIFICATION_CODE);
 
         assertThat(verified).isTrue();
+    }
+
+    @Test
+    void verifiesAccountAndReportsRepositoryState() {
+        UserRepository<User> repository = repository();
+        when(repository.verifyAccount("verification-key"))
+                .thenReturn(false, true);
+        UserServiceImpl service = service(repository);
+
+        assertThat(service.verifyAccount(" verification-key ")
+                .alreadyVerified()).isFalse();
+        assertThat(service.verifyAccount("verification-key")
+                .alreadyVerified()).isTrue();
+        verify(repository, org.mockito.Mockito.times(2))
+                .verifyAccount("verification-key");
+    }
+
+    @Test
+    void rejectsBlankAccountVerificationKey() {
+        UserRepository<User> repository = repository();
+
+        assertThatThrownBy(() -> service(repository).verifyAccount(" "))
+                .isInstanceOf(InvalidAccountVerificationException.class);
+        verify(repository, never()).verifyAccount(
+                org.mockito.ArgumentMatchers.anyString()
+        );
+    }
+
+    @Test
+    void validRefreshTokenCreatesRotatedTokenPair() {
+        UserRepository<User> repository = repository();
+        TokenProvider tokenProvider = mock(TokenProvider.class);
+        UserDetailsService userDetailsService = mock(UserDetailsService.class);
+        DecodedJWT decodedJWT = mock(DecodedJWT.class);
+        CustomerConnectUserPrincipal principal = principal(true, true);
+        when(tokenProvider.verifyRefreshToken("refresh-token"))
+                .thenReturn(decodedJWT);
+        when(decodedJWT.getSubject()).thenReturn("user@example.com");
+        when(userDetailsService.loadUserByUsername("user@example.com"))
+                .thenReturn(principal);
+        when(tokenProvider.createAccessToken(principal))
+                .thenReturn("new-access-token");
+        when(tokenProvider.createRefreshToken(principal))
+                .thenReturn("new-refresh-token");
+
+        var result = service(
+                repository,
+                mock(SmsService.class),
+                mock(BCryptPasswordEncoder.class),
+                tokenProvider,
+                userDetailsService
+        ).refreshAccessToken("refresh-token");
+
+        assertThat(result.accessToken()).isEqualTo("new-access-token");
+        assertThat(result.refreshToken()).isEqualTo("new-refresh-token");
+    }
+
+    @Test
+    void malformedRefreshTokenIsMappedToAuthenticationFailure() {
+        TokenProvider tokenProvider = mock(TokenProvider.class);
+        when(tokenProvider.verifyRefreshToken("malformed"))
+                .thenThrow(new JWTDecodeException("parser detail"));
+
+        assertThatThrownBy(() -> service(
+                repository(),
+                mock(SmsService.class),
+                mock(BCryptPasswordEncoder.class),
+                tokenProvider,
+                mock(UserDetailsService.class)
+        ).refreshAccessToken("malformed"))
+                .isInstanceOf(BadCredentialsException.class)
+                .hasMessage("Refresh token is invalid");
+    }
+
+    @Test
+    void disabledLockedAndUnknownUsersCannotRefresh() {
+        TokenProvider tokenProvider = mock(TokenProvider.class);
+        UserDetailsService userDetailsService = mock(UserDetailsService.class);
+        DecodedJWT decodedJWT = mock(DecodedJWT.class);
+        when(tokenProvider.verifyRefreshToken("disabled"))
+                .thenReturn(decodedJWT);
+        when(tokenProvider.verifyRefreshToken("locked"))
+                .thenReturn(decodedJWT);
+        when(tokenProvider.verifyRefreshToken("unknown"))
+                .thenReturn(decodedJWT);
+        when(decodedJWT.getSubject()).thenReturn("user@example.com");
+        when(userDetailsService.loadUserByUsername("user@example.com"))
+                .thenReturn(
+                        principal(false, true),
+                        principal(true, false)
+                )
+                .thenThrow(new UsernameNotFoundException("not found"));
+        UserServiceImpl service = service(
+                repository(),
+                mock(SmsService.class),
+                mock(BCryptPasswordEncoder.class),
+                tokenProvider,
+                userDetailsService
+        );
+
+        assertThatThrownBy(() -> service.refreshAccessToken("disabled"))
+                .isInstanceOf(BadCredentialsException.class);
+        assertThatThrownBy(() -> service.refreshAccessToken("locked"))
+                .isInstanceOf(BadCredentialsException.class);
+        assertThatThrownBy(() -> service.refreshAccessToken("unknown"))
+                .isInstanceOf(UsernameNotFoundException.class);
     }
 
     @Test
@@ -276,7 +390,45 @@ class UserServiceImplTest {
             SmsService smsService,
             BCryptPasswordEncoder encoder
     ) {
-        return new UserServiceImpl(repository, smsService, encoder);
+        return service(
+                repository,
+                smsService,
+                encoder,
+                mock(TokenProvider.class),
+                mock(UserDetailsService.class)
+        );
+    }
+
+    private UserServiceImpl service(
+            UserRepository<User> repository,
+            SmsService smsService,
+            BCryptPasswordEncoder encoder,
+            TokenProvider tokenProvider,
+            UserDetailsService userDetailsService
+    ) {
+        return new UserServiceImpl(
+                repository,
+                smsService,
+                encoder,
+                tokenProvider,
+                userDetailsService
+        );
+    }
+
+    private CustomerConnectUserPrincipal principal(
+            boolean enabled,
+            boolean notLocked
+    ) {
+        return new CustomerConnectUserPrincipal(
+                User.builder()
+                        .id(42L)
+                        .email("user@example.com")
+                        .password("encoded-password")
+                        .enabled(enabled)
+                        .isNotLocked(notLocked)
+                        .build(),
+                "READ:USER"
+        );
     }
 
     @SuppressWarnings("unchecked")

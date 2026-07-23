@@ -53,7 +53,8 @@ public class SecurityConfig {
                         .requestMatchers(
                                 HttpMethod.GET,
                                 "/user/reset-password/*",
-                                "/user/verify/password/*"
+                                "/user/verify/password/*",
+                                "/user/verify/account/*"
                         ).permitAll()
                         .requestMatchers(
                                 HttpMethod.POST,

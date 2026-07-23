@@ -5,6 +5,7 @@ import com.llenroctech.customerconnect.domain.PasswordResetVerification;
 import com.llenroctech.customerconnect.domain.User;
 import com.llenroctech.customerconnect.exception.ExpiredPasswordResetTokenException;
 import com.llenroctech.customerconnect.exception.InvalidPasswordResetTokenException;
+import com.llenroctech.customerconnect.exception.InvalidAccountVerificationException;
 import com.llenroctech.customerconnect.exception.UserAlreadyExistsException;
 import com.llenroctech.customerconnect.repository.RoleRepository;
 import org.junit.jupiter.api.Test;
@@ -49,6 +50,8 @@ import java.sql.Timestamp;
 import static com.llenroctech.customerconnect.query.UserQuery.DELETE_PASSWORD_RESET_TOKEN_QUERY;
 import static com.llenroctech.customerconnect.query.UserQuery.SELECT_PASSWORD_RESET_VERIFICATION_QUERY;
 import static com.llenroctech.customerconnect.query.UserQuery.UPDATE_USER_PASSWORD_QUERY;
+import static com.llenroctech.customerconnect.query.UserQuery.SELECT_ACCOUNT_VERIFICATION_QUERY;
+import static com.llenroctech.customerconnect.query.UserQuery.ENABLE_VERIFIED_ACCOUNT_QUERY;
 
 class UserRepositoryVerificationTest {
 
@@ -258,6 +261,55 @@ class UserRepositoryVerificationTest {
     }
 
     @Test
+    void validAccountKeyEnablesDisabledUserExactlyOnce() throws Exception {
+        ResultSet resultSet = mock(ResultSet.class);
+        when(resultSet.getLong("user_id")).thenReturn(42L);
+        when(resultSet.getBoolean("enabled")).thenReturn(false);
+        stubAccountVerification(resultSet);
+        when(jdbc.update(eq(ENABLE_VERIFIED_ACCOUNT_QUERY), anyMap()))
+                .thenReturn(1);
+
+        assertThat(repository.verifyAccount("verification-key")).isFalse();
+        verify(jdbc).update(
+                eq(ENABLE_VERIFIED_ACCOUNT_QUERY),
+                eq(java.util.Map.of("userId", 42L))
+        );
+        assertThat(ENABLE_VERIFIED_ACCOUNT_QUERY)
+                .contains("SET enabled = TRUE")
+                .doesNotContain("!");
+    }
+
+    @Test
+    void repeatedAccountVerificationNeverTogglesEnabledUser()
+            throws Exception {
+        ResultSet resultSet = mock(ResultSet.class);
+        when(resultSet.getLong("user_id")).thenReturn(42L);
+        when(resultSet.getBoolean("enabled")).thenReturn(true);
+        stubAccountVerification(resultSet);
+
+        assertThat(repository.verifyAccount("verification-key")).isTrue();
+        verify(jdbc, never()).update(
+                eq(ENABLE_VERIFIED_ACCOUNT_QUERY),
+                anyMap()
+        );
+    }
+
+    @Test
+    void unknownAccountVerificationKeyIsRejected() {
+        when(jdbc.queryForObject(
+                eq(SELECT_ACCOUNT_VERIFICATION_QUERY),
+                anyMap(),
+                any(RowMapper.class)
+        )).thenThrow(new org.springframework.dao.EmptyResultDataAccessException(
+                1
+        ));
+
+        assertThatThrownBy(
+                () -> repository.verifyAccount("unknown-key")
+        ).isInstanceOf(InvalidAccountVerificationException.class);
+    }
+
+    @Test
     void activeResetTokenResolvesUserWithoutConsumingTheRecord()
             throws Exception {
         ResultSet resultSet = activeResetResult(
@@ -349,6 +401,17 @@ class UserRepositoryVerificationTest {
         when(resultSet.getBoolean("enabled")).thenReturn(true);
         when(resultSet.getBoolean("non_locked")).thenReturn(true);
         return resultSet;
+    }
+
+    private void stubAccountVerification(ResultSet resultSet) {
+        when(jdbc.queryForObject(
+                eq(SELECT_ACCOUNT_VERIFICATION_QUERY),
+                anyMap(),
+                any(RowMapper.class)
+        )).thenAnswer(invocation -> {
+            RowMapper<?> mapper = invocation.getArgument(2);
+            return mapper.mapRow(resultSet, 0);
+        });
     }
 
     @SuppressWarnings("unchecked")
