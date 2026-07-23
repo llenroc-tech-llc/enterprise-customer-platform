@@ -11,6 +11,7 @@ import com.llenroctech.customerconnect.resource.UserResource;
 import com.llenroctech.customerconnect.security.filter.JwtAuthorizationFilter;
 import com.llenroctech.customerconnect.security.handler.ApiAccessDeniedHandler;
 import com.llenroctech.customerconnect.security.handler.ApiAuthenticationEntryPoint;
+import com.llenroctech.customerconnect.security.handler.JwtAuthenticationErrorResponder;
 import com.llenroctech.customerconnect.security.model.CustomerConnectUserPrincipal;
 import com.llenroctech.customerconnect.service.UserService;
 import jakarta.servlet.ServletException;
@@ -59,6 +60,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         SecurityConfig.class,
         JwtAuthorizationFilter.class,
         ApiAuthenticationEntryPoint.class,
+        JwtAuthenticationErrorResponder.class,
         ApiAccessDeniedHandler.class,
         JwtConfiguration.class,
         TokenProvider.class
@@ -115,6 +117,19 @@ class JwtAuthorizationFilterTest {
     }
 
     @Test
+    void missingTokenContinuesTheAuthorizationFilterChain()
+            throws ServletException, IOException {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockFilterChain chain = new MockFilterChain();
+
+        authorizationFilter.doFilter(request, response, chain);
+
+        assertThat(chain.getRequest()).isSameAs(request);
+        assertThat(response.getStatus()).isEqualTo(200);
+    }
+
+    @Test
     void validAccessTokenCreatesCurrentPrincipalAndContinuesChain()
             throws Exception {
         CustomerConnectUserPrincipal current = principal(
@@ -167,11 +182,56 @@ class JwtAuthorizationFilterTest {
                 "access",
                 Date.from(Instant.now().minusSeconds(1))
         ));
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
     }
 
     @Test
     void malformedTokenReturnsUnauthorized() throws Exception {
         assertUnauthorized("not-a-jwt");
+    }
+
+    @Test
+    void authenticationFailureClearsContextAndDoesNotContinueChain()
+            throws ServletException, IOException {
+        MockHttpServletRequest request = new MockHttpServletRequest(
+                "GET",
+                "/user/profile"
+        );
+        request.addHeader(HttpHeaders.AUTHORIZATION, bearer("not-a-jwt"));
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockFilterChain chain = new MockFilterChain();
+
+        authorizationFilter.doFilter(request, response, chain);
+
+        assertThat(response.getStatus()).isEqualTo(401);
+        assertThat(response.getContentType()).startsWith("application/json");
+        assertThat(response.getContentAsString())
+                .contains("/user/profile")
+                .doesNotContain("not-a-jwt");
+        assertThat(chain.getRequest()).isNull();
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+    }
+
+    @Test
+    void unexpectedAuthenticationExceptionReturnsGenericServerError()
+            throws Exception {
+        when(userDetailsService.loadUserByUsername(EMAIL))
+                .thenThrow(new IllegalStateException("database detail"));
+
+        mockMvc.perform(get("/user/profile")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(accessToken())))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.message").value(
+                        "An unexpected authentication error occurred."
+                ))
+                .andExpect(jsonPath("$.path").value("/user/profile"));
+    }
+
+    @Test
+    void optionsRequestIsNotBlocked() throws Exception {
+        mockMvc.perform(org.springframework.test.web.servlet.request
+                        .MockMvcRequestBuilders.options("/user/profile"))
+                .andExpect(status().isOk());
     }
 
     @Test
@@ -191,19 +251,27 @@ class JwtAuthorizationFilterTest {
     }
 
     @Test
-    void disabledUserWithValidTokenReturnsUnauthorized() throws Exception {
+    void disabledUserWithValidTokenReturnsForbidden() throws Exception {
         when(userDetailsService.loadUserByUsername(EMAIL)).thenReturn(
                 principal(false, true, "READ:USER")
         );
-        assertUnauthorized(accessToken());
+        mockMvc.perform(get("/user/profile")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(accessToken())))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").value("Account is disabled."))
+                .andExpect(jsonPath("$.path").value("/user/profile"));
     }
 
     @Test
-    void lockedUserWithValidTokenReturnsUnauthorized() throws Exception {
+    void lockedUserWithValidTokenReturnsForbidden() throws Exception {
         when(userDetailsService.loadUserByUsername(EMAIL)).thenReturn(
                 principal(true, false, "READ:USER")
         );
-        assertUnauthorized(accessToken());
+        mockMvc.perform(get("/user/profile")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(accessToken())))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").value("Account is locked."))
+                .andExpect(jsonPath("$.path").value("/user/profile"));
     }
 
     @Test
@@ -237,9 +305,7 @@ class JwtAuthorizationFilterTest {
         mockMvc.perform(get("/user/profile")
                         .header(HttpHeaders.AUTHORIZATION, bearer(token)))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.message").value(
-                        "Authentication is required to access this resource."
-                ));
+                .andExpect(jsonPath("$.path").value("/user/profile"));
     }
 
     private String accessToken() {

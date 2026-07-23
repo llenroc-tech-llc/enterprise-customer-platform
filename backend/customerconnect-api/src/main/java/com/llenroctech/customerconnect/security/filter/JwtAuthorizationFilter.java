@@ -1,8 +1,7 @@
 package com.llenroctech.customerconnect.security.filter;
 
-import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.llenroctech.customerconnect.provider.TokenProvider;
-import com.llenroctech.customerconnect.security.handler.ApiAuthenticationEntryPoint;
+import com.llenroctech.customerconnect.security.handler.JwtAuthenticationErrorResponder;
 import com.llenroctech.customerconnect.security.model.CustomerConnectUserPrincipal;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -10,12 +9,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -30,7 +31,12 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
 
     private final TokenProvider tokenProvider;
     private final UserDetailsService userDetailsService;
-    private final ApiAuthenticationEntryPoint authenticationEntryPoint;
+    private final JwtAuthenticationErrorResponder errorResponder;
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        return HttpMethod.OPTIONS.matches(request.getMethod());
+    }
 
     @Override
     protected void doFilterInternal(
@@ -51,13 +57,13 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
             return;
         }
 
-        String token = authorization.substring(BEARER_PREFIX.length());
-        if (token.isBlank() || token.chars().anyMatch(Character::isWhitespace)) {
-            reject(request, response, null);
-            return;
-        }
-
         try {
+            String token = authorization.substring(BEARER_PREFIX.length());
+            if (token.isBlank()
+                    || token.chars().anyMatch(Character::isWhitespace)) {
+                throw new BadCredentialsException("Bearer token is malformed");
+            }
+
             String subject = tokenProvider.verifyAccessToken(token).getSubject();
             if (subject == null || subject.isBlank()) {
                 throw new BadCredentialsException("Access token subject is invalid");
@@ -78,13 +84,9 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
                     new WebAuthenticationDetailsSource().buildDetails(request)
             );
             SecurityContextHolder.getContext().setAuthentication(authentication);
-        } catch (JWTVerificationException
-                 | UsernameNotFoundException
-                 | IllegalArgumentException exception) {
-            reject(request, response, exception);
-            return;
-        } catch (BadCredentialsException exception) {
-            reject(request, response, exception);
+        } catch (Exception exception) {
+            SecurityContextHolder.clearContext();
+            errorResponder.writeError(request, response, exception);
             return;
         }
 
@@ -99,24 +101,15 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
     }
 
     private void validateAccountStatus(UserDetails userDetails) {
-        if (!userDetails.isEnabled()
-                || !userDetails.isAccountNonLocked()
-                || !userDetails.isAccountNonExpired()
+        if (!userDetails.isEnabled()) {
+            throw new DisabledException("User account is disabled");
+        }
+        if (!userDetails.isAccountNonLocked()) {
+            throw new LockedException("User account is locked");
+        }
+        if (!userDetails.isAccountNonExpired()
                 || !userDetails.isCredentialsNonExpired()) {
             throw new BadCredentialsException("User account is unavailable");
         }
-    }
-
-    private void reject(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            Exception cause
-    ) throws IOException {
-        SecurityContextHolder.clearContext();
-        authenticationEntryPoint.commence(
-                request,
-                response,
-                new BadCredentialsException("Access token is invalid", cause)
-        );
     }
 }
