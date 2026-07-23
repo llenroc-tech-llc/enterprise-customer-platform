@@ -6,6 +6,9 @@ import com.llenroctech.customerconnect.config.JwtConfiguration;
 import com.llenroctech.customerconnect.config.SecurityConfig;
 import com.llenroctech.customerconnect.domain.User;
 import com.llenroctech.customerconnect.dto.UserDTO;
+import com.llenroctech.customerconnect.dto.PasswordResetVerificationResponse;
+import com.llenroctech.customerconnect.dto.AccountVerificationResult;
+import com.llenroctech.customerconnect.exception.InvalidAccountVerificationException;
 import com.llenroctech.customerconnect.provider.TokenProvider;
 import com.llenroctech.customerconnect.resource.UserResource;
 import com.llenroctech.customerconnect.security.filter.JwtAuthorizationFilter;
@@ -44,6 +47,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(
@@ -105,6 +109,123 @@ class JwtAuthorizationFilterTest {
                                 }
                                 """))
                 .andExpect(status().isCreated());
+    }
+
+    @Test
+    void passwordResetRequestReturnsNeutralResponseWithoutToken()
+            throws Exception {
+        mockMvc.perform(get("/user/reset-password/User@Example.com"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value(
+                        "If an account exists for this email address, " +
+                                "password reset instructions will be sent."
+                ))
+                .andExpect(jsonPath("$.data").doesNotExist())
+                .andExpect(content().string(org.hamcrest.Matchers.not(
+                        org.hamcrest.Matchers.containsString("/user/verify/")
+                )))
+                .andExpect(content().string(org.hamcrest.Matchers.not(
+                        org.hamcrest.Matchers.containsString(
+                                "User@Example.com"
+                        )
+                )));
+
+        verify(userService).requestPasswordReset("User@Example.com");
+    }
+
+    @Test
+    void passwordResetTokenVerificationIsPublicAndDoesNotExposeUserDetails()
+            throws Exception {
+        when(userService.verifyPasswordResetToken("safe-token"))
+                .thenReturn(new PasswordResetVerificationResponse(true));
+
+        mockMvc.perform(get("/user/verify/password/safe-token"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value(
+                        "Please enter a new password."
+                ))
+                .andExpect(jsonPath("$.data.valid").value(true))
+                .andExpect(content().string(org.hamcrest.Matchers.not(
+                        org.hamcrest.Matchers.containsString("safe-token")
+                )))
+                .andExpect(content().string(org.hamcrest.Matchers.not(
+                        org.hamcrest.Matchers.containsString("\"email\"")
+                )))
+                .andExpect(content().string(org.hamcrest.Matchers.not(
+                        org.hamcrest.Matchers.containsString("\"user\"")
+                )));
+    }
+
+    @Test
+    void passwordRenewalIsPublicAndDoesNotEchoSecrets() throws Exception {
+        mockMvc.perform(post("/user/reset-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "token": "safe-token",
+                                  "password": "NewPassword123!",
+                                  "confirmPassword": "NewPassword123!"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value(
+                        "Password reset successfully."
+                ))
+                .andExpect(content().string(org.hamcrest.Matchers.not(
+                        org.hamcrest.Matchers.containsString("safe-token")
+                )))
+                .andExpect(content().string(org.hamcrest.Matchers.not(
+                        org.hamcrest.Matchers.containsString("NewPassword123!")
+                )));
+    }
+
+    @Test
+    void accountVerificationIsPublicAndReturnsSafeResult() throws Exception {
+        when(userService.verifyAccount("verification-key"))
+                .thenReturn(new AccountVerificationResult(false));
+
+        mockMvc.perform(get("/user/verify/account/verification-key"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Account verified."))
+                .andExpect(jsonPath("$.data.alreadyVerified").value(false))
+                .andExpect(content().string(org.hamcrest.Matchers.not(
+                        org.hamcrest.Matchers.containsString(
+                                "verification-key"
+                        )
+                )));
+    }
+
+    @Test
+    void repeatedAccountVerificationReportsAlreadyVerified()
+            throws Exception {
+        when(userService.verifyAccount("verification-key"))
+                .thenReturn(new AccountVerificationResult(true));
+
+        mockMvc.perform(get("/user/verify/account/verification-key"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value(
+                        "Account already verified."
+                ))
+                .andExpect(jsonPath("$.data.alreadyVerified").value(true));
+    }
+
+    @Test
+    void invalidAccountVerificationUsesSafeStructuredError()
+            throws Exception {
+        when(userService.verifyAccount("unknown-key"))
+                .thenThrow(new InvalidAccountVerificationException("detail"));
+
+        mockMvc.perform(get("/user/verify/account/unknown-key"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(
+                        "This account verification link is invalid."
+                ))
+                .andExpect(jsonPath("$.path").value(
+                        "/user/verify/account/unknown-key"
+                ))
+                .andExpect(content().string(org.hamcrest.Matchers.not(
+                        org.hamcrest.Matchers.containsString("detail")
+                )));
     }
 
     @Test

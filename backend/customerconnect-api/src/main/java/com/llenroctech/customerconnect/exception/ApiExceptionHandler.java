@@ -239,6 +239,45 @@ public class ApiExceptionHandler {
         return response(BAD_REQUEST, "The request is invalid.", request);
     }
 
+    @ExceptionHandler({
+            InvalidPasswordResetTokenException.class,
+            ExpiredPasswordResetTokenException.class
+    })
+    public ResponseEntity<HttpResponse> handlePasswordResetTokenFailure(
+            RuntimeException exception,
+            HttpServletRequest request
+    ) {
+        log.warn(
+                "Password reset token rejected for {} {} ({})",
+                request.getMethod(),
+                request.getRequestURI(),
+                exception.getClass().getSimpleName()
+        );
+        return response(
+                BAD_REQUEST,
+                "This password reset link is invalid or has expired. " +
+                        "Please request a new one.",
+                request
+        );
+    }
+
+    @ExceptionHandler(InvalidAccountVerificationException.class)
+    public ResponseEntity<HttpResponse> handleAccountVerificationFailure(
+            InvalidAccountVerificationException exception,
+            HttpServletRequest request
+    ) {
+        log.warn(
+                "Account verification rejected for {} {}",
+                request.getMethod(),
+                request.getRequestURI()
+        );
+        return response(
+                BAD_REQUEST,
+                "This account verification link is invalid.",
+                request
+        );
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<HttpResponse> handleUnexpected(
             Exception exception,

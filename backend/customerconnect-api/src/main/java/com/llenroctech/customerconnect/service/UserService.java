@@ -2,6 +2,10 @@ package com.llenroctech.customerconnect.service;
 
 import com.llenroctech.customerconnect.domain.User;
 import com.llenroctech.customerconnect.dto.UserDTO;
+import com.llenroctech.customerconnect.dto.PasswordResetVerificationResponse;
+import com.llenroctech.customerconnect.dto.AccountVerificationResult;
+import com.llenroctech.customerconnect.domain.RefreshedTokens;
+import com.llenroctech.customerconnect.request.PasswordResetRequest;
 
 public interface UserService {
     UserDTO createUser(User user);
@@ -10,4 +14,14 @@ public interface UserService {
     void sendVerificationCode(UserDTO userDTO);
 
     boolean verifyCode(String email, String code);
+
+    AccountVerificationResult verifyAccount(String key);
+
+    RefreshedTokens refreshAccessToken(String refreshToken);
+
+    void requestPasswordReset(String email);
+
+    PasswordResetVerificationResponse verifyPasswordResetToken(String token);
+
+    void resetPassword(PasswordResetRequest request);
 }

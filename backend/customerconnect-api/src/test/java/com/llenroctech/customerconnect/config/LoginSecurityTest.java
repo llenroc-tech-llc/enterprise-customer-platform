@@ -3,6 +3,7 @@ package com.llenroctech.customerconnect.config;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.llenroctech.customerconnect.domain.User;
+import com.llenroctech.customerconnect.domain.RefreshedTokens;
 import com.llenroctech.customerconnect.dto.UserDTO;
 import com.llenroctech.customerconnect.provider.TokenProvider;
 import com.llenroctech.customerconnect.resource.UserResource;
@@ -19,6 +20,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -32,6 +34,8 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -179,6 +183,12 @@ class LoginSecurityTest {
                 .andExpect(status().isOk())
                 .andReturn();
         String originalRefreshToken = extractRefreshToken(loginResult);
+        String replacementRefreshToken =
+                tokenProvider.createRefreshToken(principal);
+        doReturn(new RefreshedTokens(
+                tokenProvider.createAccessToken(principal),
+                replacementRefreshToken
+        )).when(userService).refreshAccessToken(originalRefreshToken);
 
         MvcResult refreshResult = mockMvc.perform(post("/user/refresh-token")
                         .cookie(new Cookie(
@@ -186,7 +196,7 @@ class LoginSecurityTest {
                                 originalRefreshToken
                         )))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("Token refreshed"))
+                .andExpect(jsonPath("$.message").value("Token refreshed."))
                 .andExpect(jsonPath("$.data.accessToken").isNotEmpty())
                 .andExpect(jsonPath("$.data.refreshToken").doesNotExist())
                 .andExpect(header().string(
@@ -203,9 +213,10 @@ class LoginSecurityTest {
                 ))
                 .andReturn();
 
-        String replacementRefreshToken = extractRefreshToken(refreshResult);
-        assertThat(replacementRefreshToken)
+        String rotatedCookie = extractRefreshToken(refreshResult);
+        assertThat(rotatedCookie)
                 .isNotBlank()
+                .isEqualTo(replacementRefreshToken)
                 .isNotEqualTo(originalRefreshToken);
     }
 
@@ -217,6 +228,8 @@ class LoginSecurityTest {
 
     @Test
     void invalidRefreshTokenReturnsUnauthorized() throws Exception {
+        doThrow(new BadCredentialsException("invalid"))
+                .when(userService).refreshAccessToken("not-a-jwt");
         mockMvc.perform(post("/user/refresh-token")
                         .cookie(new Cookie(REFRESH_TOKEN_COOKIE, "not-a-jwt")))
                 .andExpect(status().isUnauthorized());
@@ -227,6 +240,8 @@ class LoginSecurityTest {
         String expiredToken = refreshToken(
                 Date.from(Instant.now().minusSeconds(1))
         );
+        doThrow(new BadCredentialsException("expired"))
+                .when(userService).refreshAccessToken(expiredToken);
 
         mockMvc.perform(post("/user/refresh-token")
                         .cookie(new Cookie(REFRESH_TOKEN_COOKIE, expiredToken)))
@@ -236,6 +251,8 @@ class LoginSecurityTest {
     @Test
     void accessTokenCannotBeUsedAsRefreshToken() throws Exception {
         String accessToken = tokenProvider.createAccessToken(principal(true));
+        doThrow(new BadCredentialsException("wrong type"))
+                .when(userService).refreshAccessToken(accessToken);
 
         mockMvc.perform(post("/user/refresh-token")
                         .cookie(new Cookie(REFRESH_TOKEN_COOKIE, accessToken)))
