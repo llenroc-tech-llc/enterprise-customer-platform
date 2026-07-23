@@ -8,6 +8,7 @@ import com.llenroctech.customerconnect.provider.TokenProvider;
 import com.llenroctech.customerconnect.resource.UserResource;
 import com.llenroctech.customerconnect.security.handler.ApiAccessDeniedHandler;
 import com.llenroctech.customerconnect.security.handler.ApiAuthenticationEntryPoint;
+import com.llenroctech.customerconnect.security.handler.JwtAuthenticationErrorResponder;
 import com.llenroctech.customerconnect.security.model.CustomerConnectUserPrincipal;
 import com.llenroctech.customerconnect.service.UserService;
 import jakarta.servlet.http.Cookie;
@@ -51,6 +52,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import({
         SecurityConfig.class,
         ApiAuthenticationEntryPoint.class,
+        JwtAuthenticationErrorResponder.class,
         ApiAccessDeniedHandler.class,
         JwtConfiguration.class,
         TokenProvider.class
