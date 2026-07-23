@@ -1,0 +1,163 @@
+.page-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: end;
+  margin-bottom: 1rem;
+}
+.eyebrow {
+  color: #5b5fef;
+  text-transform: uppercase;
+  letter-spacing: 0.13em;
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+h1 {
+  font-size: clamp(2rem, 3vw, 3rem);
+  letter-spacing: -0.045em;
+  margin: 0.4rem 0;
+}
+p {
+  color: #667085;
+}
+button {
+  min-height: 42px;
+  padding: 0.65rem 0.9rem;
+  border: 1px solid #dde3ec;
+  background: white;
+  color: #344054;
+  border-radius: 10px;
+  font-weight: 700;
+}
+.mock-label {
+  display: inline-block;
+  font-size: 0.72rem;
+  color: #9a6700;
+  background: #fffbeb;
+  padding: 0.4rem 0.65rem;
+  border-radius: 999px;
+}
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 1.2rem 0;
+}
+.metric-grid article,
+.activity,
+.insight {
+  border: 1px solid #dde3ec;
+  border-radius: 16px;
+  background: white;
+  box-shadow: 0 10px 28px rgb(23 32 51 / 0.04);
+}
+.metric-grid article {
+  padding: 1.25rem;
+  display: grid;
+  gap: 0.45rem;
+}
+.metric-icon {
+  display: grid;
+  place-items: center;
+  width: 2.3rem;
+  aspect-ratio: 1;
+  color: #5b5fef;
+  background: #eef0ff;
+  border-radius: 10px;
+  margin-bottom: 0.3rem;
+}
+.metric-grid span,
+.metric-grid small {
+  color: #667085;
+  font-size: 0.78rem;
+}
+.metric-grid strong {
+  font-size: 1.75rem;
+  letter-spacing: -0.04em;
+}
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(280px, 0.7fr);
+  gap: 1rem;
+}
+.activity,
+.insight {
+  padding: 1.35rem;
+}
+.card-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+h2 {
+  margin: 0.35rem 0 1rem;
+  letter-spacing: -0.025em;
+}
+.activity-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 1rem 0;
+  border-top: 1px solid #eef1f5;
+}
+.activity-row i {
+  width: 0.6rem;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 0 5px #ecfdf5;
+}
+.activity-row div {
+  display: grid;
+  gap: 0.2rem;
+}
+.activity-row span,
+time {
+  color: #667085;
+  font-size: 0.74rem;
+}
+.insight {
+  color: white;
+  background: linear-gradient(150deg, #152238, #25145b);
+  border: 0;
+}
+.insight p {
+  color: #c8cfe1;
+  line-height: 1.6;
+}
+.insight button {
+  color: white;
+  border-color: rgb(255 255 255 / 0.2);
+  background: rgb(255 255 255 / 0.1);
+}
+.ai-badge {
+  color: #c4b5fd;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+@media (max-width: 1100px) {
+  .metric-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 760px) {
+  .page-heading {
+    align-items: start;
+    flex-direction: column;
+  }
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 480px) {
+  .metric-grid {
+    grid-template-columns: 1fr;
+  }
+  .activity-row {
+    grid-template-columns: auto 1fr;
+  }
+  .activity-row time {
+    grid-column: 2;
+  }
+}

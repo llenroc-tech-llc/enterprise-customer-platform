@@ -1,0 +1,49 @@
+<div class="app-frame" [class.compact]="compact()">
+  <aside [class.open]="drawerOpen()">
+    <div class="sidebar-brand"><span class="brand-mark">L</span><strong>Llenroc</strong></div>
+    <button class="close-mobile" (click)="drawerOpen.set(false)" aria-label="Close navigation">
+      ×
+    </button>
+    <nav aria-label="Primary navigation">
+      @for (item of navigation; track item[0]) {
+        <a [routerLink]="['/', item[0]]" routerLinkActive="active" (click)="drawerOpen.set(false)">
+          <span class="nav-icon">{{ item[2] }}</span
+          ><span>{{ item[1] }}</span>
+        </a>
+      }
+    </nav>
+    <div class="sidebar-foot">
+      <div class="security-card">
+        <strong>Security center</strong><span>All systems protected</span>
+      </div>
+      <button (click)="compact.set(!compact())" aria-label="Collapse sidebar">
+        ⇤ <span>Collapse</span>
+      </button>
+    </div>
+  </aside>
+  @if (drawerOpen()) {
+    <button class="scrim" aria-label="Close navigation" (click)="drawerOpen.set(false)"></button>
+  }
+
+  <section class="workspace">
+    <header class="topbar">
+      <button class="menu" (click)="drawerOpen.set(true)" aria-label="Open navigation">☰</button>
+      <button class="organization">Llenroc Operations <span>⌄</span></button>
+      <label class="search"
+        ><span>⌕</span><input placeholder="Search the platform" aria-label="Search the platform"
+      /></label>
+      <button class="icon-button" aria-label="Notifications">♢<i></i></button>
+      <a class="avatar" routerLink="/profile">{{ (session.user()?.firstName || 'U')[0] }}</a>
+    </header>
+    <main><router-outlet /></main>
+  </section>
+
+  <button
+    class="ai-launcher"
+    (click)="assistantOpen.set(true)"
+    aria-label="Open Llenroc AI assistant"
+  >
+    <span>✦</span><strong>Ask Llenroc AI</strong>
+  </button>
+  <app-assistant-panel [open]="assistantOpen()" (closed)="assistantOpen.set(false)" />
+</div>

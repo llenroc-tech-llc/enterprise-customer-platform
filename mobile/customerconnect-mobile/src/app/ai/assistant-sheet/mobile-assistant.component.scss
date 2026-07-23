@@ -1,0 +1,119 @@
+ion-content {
+  --background: #f5f7fb;
+}
+main {
+  padding: calc(env(safe-area-inset-top) + 1.1rem) 1rem 7rem;
+  max-width: 720px;
+  margin: auto;
+}
+header {
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+}
+header div:nth-child(2) {
+  flex: 1;
+}
+header span {
+  color: #7c3aed;
+  text-transform: uppercase;
+  font-size: 0.65rem;
+  font-weight: 800;
+}
+h1 {
+  font-size: 1.35rem;
+  margin: 0.2rem 0;
+}
+.ai-mark {
+  display: grid;
+  place-items: center;
+  width: 2.8rem;
+  aspect-ratio: 1;
+  border-radius: 14px;
+  color: white;
+  background: linear-gradient(135deg, #5b5fef, #7c3aed);
+}
+header button {
+  width: 42px;
+  aspect-ratio: 1;
+  border: 1px solid #dde3ec;
+  border-radius: 12px;
+  background: white;
+}
+.empty {
+  text-align: center;
+  padding: 3rem 1rem;
+}
+.empty > div {
+  display: grid;
+  place-items: center;
+  width: 4rem;
+  aspect-ratio: 1;
+  margin: auto;
+  border-radius: 20px;
+  color: white;
+  background: linear-gradient(135deg, #5b5fef, #7c3aed);
+  box-shadow: 0 15px 35px rgb(124 58 237 / 0.25);
+}
+.empty p,
+.unavailable p {
+  color: #667085;
+  line-height: 1.55;
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.chips button,
+.unavailable button {
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #dde3ec;
+  border-radius: 999px;
+  background: white;
+  color: #4247cf;
+  font-size: 0.74rem;
+}
+.message {
+  max-width: 85%;
+  margin: 0.7rem 0 0.7rem auto;
+  padding: 0.75rem 0.9rem;
+  border-radius: 14px;
+  color: white;
+  background: #5b5fef;
+}
+.unavailable {
+  padding: 1rem;
+  margin: 1rem 0;
+  border-radius: 14px;
+  background: #ede9fe;
+}
+.unavailable div {
+  display: flex;
+  gap: 0.4rem;
+}
+footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(64px + env(safe-area-inset-bottom));
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: rgb(255 255 255 / 0.96);
+  border-top: 1px solid #dde3ec;
+}
+footer ion-input {
+  --padding-start: 0.8rem;
+  min-height: 46px;
+  border: 1px solid #dde3ec;
+  border-radius: 13px;
+  background: #f8fafc;
+}
+footer button {
+  width: 46px;
+  border: 0;
+  border-radius: 13px;
+  color: white;
+  background: #5b5fef;
+}

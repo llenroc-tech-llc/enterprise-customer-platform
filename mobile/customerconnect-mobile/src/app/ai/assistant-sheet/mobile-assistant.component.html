@@ -1,0 +1,47 @@
+<ion-content [fullscreen]="true">
+  <main>
+    <header>
+      <div class="ai-mark">✦</div>
+      <div>
+        <span>Llenroc AI</span>
+        <h1>Operations assistant</h1>
+      </div>
+      <button aria-label="Voice input coming soon">◉</button>
+    </header>
+    @if (messages().length === 0) {
+      <section class="empty">
+        <div>✦</div>
+        <h2>How can I help?</h2>
+        <p>
+          Secure AI assistance is coming soon. Prompts stay on this device until the authorized
+          backend integration is available.
+        </p>
+      </section>
+    }
+    @for (message of messages(); track $index) {
+      <div class="message">{{ message }}</div>
+    }
+    @if (unavailable()) {
+      <div class="unavailable">
+        <strong>AI integration coming soon</strong>
+        <p>
+          This request was not transmitted. Future responses will be permission-aware and audited.
+        </p>
+        <div><button>Helpful</button><button>Not helpful</button></div>
+      </div>
+    }
+    <section class="chips">
+      @for (suggestion of suggestions; track suggestion) {
+        <button (click)="send(suggestion)">{{ suggestion }}</button>
+      }
+    </section>
+  </main>
+  <footer slot="fixed">
+    <ion-input
+      [(ngModel)]="prompt"
+      placeholder="Ask about your operations…"
+      (keyup.enter)="send()"
+      aria-label="Ask Llenroc AI"
+    /><button (click)="send()" aria-label="Send prompt">↑</button>
+  </footer>
+</ion-content>

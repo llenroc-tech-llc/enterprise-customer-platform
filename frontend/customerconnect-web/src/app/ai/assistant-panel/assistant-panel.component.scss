@@ -1,0 +1,133 @@
+.panel-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 29;
+  border: 0;
+  background: rgb(11 23 57 / 0.28);
+}
+aside {
+  position: fixed;
+  z-index: 30;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: min(440px, 100vw);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  color: #172033;
+  background: white;
+  box-shadow: -20px 0 55px rgb(11 23 57 / 0.18);
+}
+header {
+  display: flex;
+  justify-content: space-between;
+  padding: 1.1rem;
+  border-bottom: 1px solid #dde3ec;
+}
+header div {
+  display: grid;
+  gap: 0.15rem;
+}
+header span {
+  color: #7c3aed;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+header button {
+  border: 0;
+  background: none;
+  font-size: 1.5rem;
+}
+main {
+  min-height: 0;
+  overflow: auto;
+  padding: 1.1rem;
+}
+.empty {
+  text-align: center;
+  padding: 2.5rem 1rem 1.5rem;
+}
+.empty p,
+.unavailable p {
+  color: #667085;
+  line-height: 1.5;
+}
+.orb {
+  display: grid;
+  place-items: center;
+  margin: auto;
+  width: 3.5rem;
+  aspect-ratio: 1;
+  color: white;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #5b5fef, #7c3aed);
+  box-shadow: 0 15px 35px rgb(124 58 237 / 0.25);
+}
+.suggestions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.suggestions button {
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #dde3ec;
+  border-radius: 999px;
+  background: white;
+  color: #4247cf;
+  font-size: 0.75rem;
+}
+.message {
+  max-width: 85%;
+  padding: 0.7rem 0.9rem;
+  margin: 0.6rem 0;
+  border-radius: 13px;
+  background: #f0f2f7;
+}
+.message.user {
+  margin-left: auto;
+  color: white;
+  background: #5b5fef;
+}
+.unavailable {
+  padding: 1rem;
+  border-radius: 13px;
+  background: #f5f3ff;
+  margin: 1rem 0;
+}
+footer {
+  display: flex;
+  gap: 0.5rem;
+  padding: 1rem;
+  border-top: 1px solid #dde3ec;
+}
+footer label {
+  flex: 1;
+}
+footer input {
+  width: 100%;
+  min-height: 46px;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid #dde3ec;
+  border-radius: 12px;
+}
+footer button {
+  width: 46px;
+  border: 0;
+  border-radius: 12px;
+  color: white;
+  background: #5b5fef;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+}
+@media (max-width: 600px) {
+  aside {
+    top: auto;
+    height: min(88dvh, 720px);
+    border-radius: 20px 20px 0 0;
+  }
+}

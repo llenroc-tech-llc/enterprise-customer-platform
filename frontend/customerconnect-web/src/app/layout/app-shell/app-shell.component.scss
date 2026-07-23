@@ -1,0 +1,255 @@
+:host {
+  display: block;
+  min-height: 100dvh;
+}
+.app-frame {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  background: #f5f7fb;
+  color: #172033;
+}
+aside {
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  padding: 1.25rem;
+  color: #dfe6f7;
+  background: #0b1739;
+  display: flex;
+  flex-direction: column;
+  z-index: 20;
+  transition: width 0.2s;
+}
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.25rem 0.45rem 1.5rem;
+  font-size: 1.05rem;
+  color: white;
+}
+.brand-mark {
+  display: grid;
+  place-items: center;
+  width: 2.2rem;
+  aspect-ratio: 1;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #5b5fef, #7c3aed);
+  color: white;
+}
+nav {
+  display: grid;
+  gap: 0.25rem;
+}
+nav a {
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+  min-height: 44px;
+  padding: 0.65rem 0.75rem;
+  border-radius: 10px;
+  color: #aebbd5;
+  text-decoration: none;
+  font-size: 0.86rem;
+  font-weight: 650;
+}
+nav a:hover,
+nav a.active {
+  color: white;
+  background: rgb(91 95 239 / 0.22);
+}
+.nav-icon {
+  width: 1.25rem;
+  text-align: center;
+  font-size: 1rem;
+}
+.sidebar-foot {
+  display: grid;
+  gap: 0.8rem;
+  margin-top: auto;
+}
+.security-card {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.8rem;
+  border: 1px solid rgb(255 255 255 / 0.08);
+  border-radius: 12px;
+  background: rgb(255 255 255 / 0.04);
+  font-size: 0.75rem;
+}
+.security-card span {
+  color: #82d9b8;
+}
+.sidebar-foot button {
+  color: #aebbd5;
+  background: none;
+  border: 0;
+  text-align: left;
+  padding: 0.65rem;
+  cursor: pointer;
+}
+.workspace {
+  min-width: 0;
+}
+.topbar {
+  height: 72px;
+  padding: 0 clamp(1rem, 3vw, 2.5rem);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  border-bottom: 1px solid #dde3ec;
+  background: rgb(255 255 255 / 0.92);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  backdrop-filter: blur(15px);
+}
+.organization {
+  border: 0;
+  background: transparent;
+  font-weight: 750;
+  color: #172033;
+}
+.search {
+  margin-left: auto;
+  width: min(36vw, 420px);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0 0.8rem;
+  border: 1px solid #dde3ec;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+.search input {
+  width: 100%;
+  min-height: 40px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+}
+.icon-button,
+.menu {
+  border: 0;
+  background: transparent;
+  min-width: 42px;
+  min-height: 42px;
+  font-size: 1.1rem;
+  position: relative;
+}
+.icon-button i {
+  position: absolute;
+  right: 7px;
+  top: 6px;
+  width: 0.45rem;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #dc2626;
+}
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 2.3rem;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  color: white;
+  background: #152238;
+  text-decoration: none;
+  font-weight: 800;
+}
+.menu,
+.close-mobile {
+  display: none;
+}
+main {
+  padding: clamp(1.25rem, 3vw, 2.75rem);
+  max-width: 1680px;
+  margin-inline: auto;
+}
+.compact {
+  grid-template-columns: 82px minmax(0, 1fr);
+}
+.compact aside strong,
+.compact nav a span:last-child,
+.compact .security-card,
+.compact .sidebar-foot button span {
+  display: none;
+}
+.compact nav a {
+  justify-content: center;
+}
+.ai-launcher {
+  position: fixed;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  z-index: 18;
+  min-height: 50px;
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: white;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #5b5fef, #7c3aed);
+  box-shadow: 0 16px 35px rgb(91 95 239 / 0.3);
+}
+.ai-launcher span {
+  font-size: 1.2rem;
+}
+@media (max-width: 900px) {
+  .app-frame,
+  .compact {
+    grid-template-columns: 1fr;
+  }
+  aside {
+    position: fixed;
+    left: 0;
+    width: min(84vw, 300px);
+    transform: translateX(-105%);
+    box-shadow: 20px 0 45px rgb(11 23 57 / 0.2);
+  }
+  aside.open {
+    transform: translateX(0);
+  }
+  .menu,
+  .close-mobile {
+    display: inline-grid;
+    place-items: center;
+  }
+  .close-mobile {
+    position: absolute;
+    right: 1rem;
+    top: 1rem;
+    border: 0;
+    background: transparent;
+    color: white;
+    font-size: 1.6rem;
+  }
+  .scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 19;
+    border: 0;
+    background: rgb(11 23 57 / 0.45);
+  }
+  .search {
+    display: none;
+  }
+}
+@media (max-width: 520px) {
+  .organization {
+    max-width: 55vw;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .ai-launcher {
+    right: 1rem;
+    bottom: 1rem;
+  }
+  .ai-launcher strong {
+    display: none;
+  }
+}
