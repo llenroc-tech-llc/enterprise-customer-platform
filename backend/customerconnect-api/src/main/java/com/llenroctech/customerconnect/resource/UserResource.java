@@ -6,6 +6,7 @@ import com.llenroctech.customerconnect.config.JwtProperties;
 import com.llenroctech.customerconnect.dto.UserDTO;
 import com.llenroctech.customerconnect.provider.TokenProvider;
 import com.llenroctech.customerconnect.request.LoginRequest;
+import com.llenroctech.customerconnect.request.MfaVerificationRequest;
 import com.llenroctech.customerconnect.security.model.CustomerConnectUserPrincipal;
 import com.llenroctech.customerconnect.service.UserService;
 import com.auth0.jwt.exceptions.JWTVerificationException;
@@ -24,6 +25,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -120,6 +122,30 @@ public class UserResource {
         }
     }
 
+    @PostMapping("/verify-code")
+    public ResponseEntity<HttpResponse> verifyMfaCode(
+            @RequestBody @Valid MfaVerificationRequest request,
+            HttpServletResponse response
+    ) {
+        if (!userService.verifyCode(
+                request.getEmail(),
+                request.getCode()
+        )) {
+            throw new BadCredentialsException("Verification code is invalid");
+        }
+
+        CustomerConnectUserPrincipal principal = requirePrincipal(
+                userDetailsService.loadUserByUsername(request.getEmail())
+        );
+        validateAccountStatus(principal);
+
+        return sendLoginResponse(
+                userService.getUserByEmail(request.getEmail()),
+                principal,
+                response
+        );
+    }
+
     @PostMapping("/register")
     public ResponseEntity<HttpResponse> saveUser(
             @RequestBody @Valid User user) {
@@ -137,6 +163,26 @@ public class UserResource {
                                 .statusCode(CREATED.value())
                                 .build()
                 );
+    }
+
+    @GetMapping("/profile")
+    public ResponseEntity<HttpResponse> getProfile(Authentication authentication) {
+        CustomerConnectUserPrincipal principal = requirePrincipal(
+                authentication.getPrincipal()
+        );
+
+        return ResponseEntity.ok(
+                HttpResponse.builder()
+                        .timestamp(now().toString())
+                        .data(of(
+                                "user",
+                                userService.getUserByEmail(principal.getUsername())
+                        ))
+                        .message("User profile retrieved")
+                        .status(OK)
+                        .statusCode(OK.value())
+                        .build()
+        );
     }
 
     private ResponseEntity<HttpResponse> sendLoginResponse(

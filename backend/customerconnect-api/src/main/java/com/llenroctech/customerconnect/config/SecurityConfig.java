@@ -2,6 +2,7 @@ package com.llenroctech.customerconnect.config;
 
 import com.llenroctech.customerconnect.security.handler.ApiAccessDeniedHandler;
 import com.llenroctech.customerconnect.security.handler.ApiAuthenticationEntryPoint;
+import com.llenroctech.customerconnect.security.filter.JwtAuthorizationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,6 +15,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
 
@@ -26,10 +28,12 @@ public class SecurityConfig {
     private final UserDetailsService userDetailsService;
     private final ApiAccessDeniedHandler accessDeniedHandler;
     private final ApiAuthenticationEntryPoint authenticationEntryPoint;
+    private final JwtAuthorizationFilter jwtAuthorizationFilter;
 
     private static final String[] PUBLIC_URLS = {
             "/user/register",
             "/user/login",
+            "/user/verify-code",
             "/user/refresh-token"
     };
 
@@ -44,6 +48,7 @@ public class SecurityConfig {
                 )
 
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(HttpMethod.POST, PUBLIC_URLS).permitAll()
 
                         .requestMatchers(
@@ -64,6 +69,11 @@ public class SecurityConfig {
                 .exceptionHandling(exception -> exception
                         .accessDeniedHandler(accessDeniedHandler)
                         .authenticationEntryPoint(authenticationEntryPoint)
+                )
+
+                .addFilterBefore(
+                        jwtAuthorizationFilter,
+                        UsernamePasswordAuthenticationFilter.class
                 )
 
                 .build();
